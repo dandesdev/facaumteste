@@ -4,7 +4,7 @@ import { createSupabaseBrowserClient } from "~/lib/supabaseBrowser";
 import { env } from "~/env";
 import { Button } from "./ui/button";
 
-export default function LoginButton() {
+export default function LoginButton({disabled}:{disabled?: boolean}) {
   const handleGoogleLogin = async () => {
     const supabase = createSupabaseBrowserClient();
     const base = env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -20,7 +20,7 @@ export default function LoginButton() {
   };
 
   return (
-    <Button className="gsi-material-button" onClick={handleGoogleLogin}>
+    <Button className="gsi-material-button" onClick={handleGoogleLogin} disabled={disabled}>
       <div className="gsi-material-button-state"></div>
       <div className="gsi-material-button-content-wrapper">
         <div className="gsi-material-button-icon">

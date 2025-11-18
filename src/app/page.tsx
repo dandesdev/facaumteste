@@ -6,6 +6,7 @@ import { Info } from "lucide-react";
 // import { LatestPost } from "~/app/_components/post";
 import { HydrateClient } from "~/trpc/server";
 import { LastLocationRestorer } from "~/components/LastLocationRestores";
+import { env } from "~/env";
 
 export default async function Home() {
   // const hello = await api.post.hello({ text: "from tRPC" });
@@ -14,6 +15,7 @@ export default async function Home() {
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
+  const authEnabled = env.NODE_ENV !== "production";
 
   //if (error || !data?.user) redirect("/");
 
@@ -27,7 +29,7 @@ export default async function Home() {
               <span className="opacity-80">{data?.user?.email}</span>
             ) : (
               <span>
-                <LoginButton />
+                <LoginButton disabled={!authEnabled} />
               </span>
             )}
           </span>
@@ -40,7 +42,7 @@ export default async function Home() {
             <Button className="flex-1 font-bold sm:min-w-[185] py-3 text-[1rem]" size={null}>Crie</Button>
           </span>
           <span className="block sm:hidden">
-            <LoginButton />
+            <LoginButton disabled={!authEnabled} />
           </span>
         </menu>
         <span className="hidden w-full sm:flex">
