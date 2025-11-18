@@ -20,18 +20,6 @@ export default function LogoutButton() {
         localStorage.removeItem("last_path");
       } catch {}
 
-      // if server cookie for "remember", call API to clear it
-      try {
-        await fetch("/api/set-remember", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ remember: false }),
-        });
-      } catch (err) {
-        // non-fatal
-        console.warn("Failed to clear server remember cookie:", err);
-      }
-
       router.push("/");
     } catch (err) {
       console.error("Logout error:", err);

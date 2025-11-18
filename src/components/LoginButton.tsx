@@ -7,7 +7,8 @@ import { Button } from "./ui/button";
 export default function LoginButton({disabled}:{disabled?: boolean}) {
   const handleGoogleLogin = async () => {
     const supabase = createSupabaseBrowserClient();
-    const base = env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+    //const base = env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"; //uncooment on prod
+    const base = "http://localhost:3000";
     const redirectTo = `${base}/auth/callback?next=/dashboard`;
 
     await supabase.auth.signInWithOAuth({

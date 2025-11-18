@@ -15,7 +15,8 @@ export default async function Home() {
 
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.auth.getUser();
-  const authEnabled = env.NODE_ENV !== "production";
+  const environment = env.NODE_ENV;
+  const authEnabled = environment !== "production";
 
   //if (error || !data?.user) redirect("/");
 
