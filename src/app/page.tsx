@@ -7,6 +7,7 @@ import { Info } from "lucide-react";
 import { HydrateClient } from "~/trpc/server";
 import { LastLocationRestorer } from "~/components/LastLocationRestores";
 import { env } from "~/env";
+import LogoutButton from "~/components/LogoutButton";
 
 export default async function Home() {
   // const hello = await api.post.hello({ text: "from tRPC" });
@@ -27,7 +28,7 @@ export default async function Home() {
         <span className="min-w-full flex items-center justify-center gap-2 p-2">
           <span className="hidden sm:flex flex-1 justify-center">
             {data?.user?.email ? (
-              <span className="opacity-80">{data?.user?.email}</span>
+              <span><LogoutButton /><span className="opacity-80">{data?.user?.email}</span></span>
             ) : (
               <span>
                 <LoginButton disabled={!authEnabled} />
