@@ -37,9 +37,6 @@ export async function GET(request: Request) {
   const { data } = await supabase.auth.getUser();
   const supaUser = data.user;
 
-  console.log("this is supaUser:"); //debugg
-  console.log(supaUser); //debugg
-
   if (supaUser) {
     const displayName =
       getStringFromMetadata(supaUser.user_metadata, "full_name") ??
