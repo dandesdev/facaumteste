@@ -6,11 +6,12 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
-import { initTRPC } from "@trpc/server";
+import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
 import { db } from "~/server/db";
+import { createSupabaseServerClient } from "~/server/supabaseServer";
 
 /**
  * 1. CONTEXT
@@ -25,8 +26,15 @@ import { db } from "~/server/db";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return {
     db,
+    supabase,
+    user,
     ...opts,
   };
 };
@@ -104,3 +112,42 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
  * are logged in.
  */
 export const publicProcedure = t.procedure.use(timingMiddleware);
+
+/**
+ * Auth middleware - ensures user is authenticated
+ *
+ * Reusable middleware that enforces users are logged in before running the procedure.
+ */
+const enforceUserIsAuthed = t.middleware(async ({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({ code: "UNAUTHORIZED" });
+  }
+
+  return next({
+    ctx: {
+      // infers the `user` as non-nullable
+      user: ctx.user,
+    },
+  });
+});
+
+/**
+ * Protected (authenticated) procedure
+ *
+ * Use this when you want to ensure the user is logged in before running the procedure.
+ * If the user is not logged in, it will throw an UNAUTHORIZED error.
+ *
+ * @example
+ * ```ts
+ * export const myRouter = createTRPCRouter({
+ *   secretData: protectedProcedure.query(({ ctx }) => {
+ *     // ctx.user is guaranteed to be defined here
+ *     return { userId: ctx.user.id };
+ *   }),
+ * });
+ * ```
+ */
+export const protectedProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(enforceUserIsAuthed);
+

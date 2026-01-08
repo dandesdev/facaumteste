@@ -104,7 +104,7 @@ export const orgGroupMembers = createTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-   (t) => [
+  (t) => [
     primaryKey({
       columns: [t.groupId, t.userId],
       name: "org_group_member_pk",
@@ -118,8 +118,8 @@ export const orgGroupMembers = createTable(
 export const subjects = createTable(
   "subject",
   {
-    id: uuid("id").primaryKey(),
-    name: varchar("name", { length: 255 }).notNull(), // added for UI friendliness
+    id: uuid("id").primaryKey().defaultRandom(),
+    externalCode: varchar("external_code", { length: 64 }), // external taxonomy code (e.g., BNCC code)
     slug: varchar("slug", { length: 255 }).notNull(), // unique per scope/owner
     description: text("description"),
 
@@ -145,6 +145,7 @@ export const subjects = createTable(
     index("subject_user_slug_idx").on(t.ownerUserId, t.slug),
     index("subject_parent_idx").on(t.parentId),
     index("subject_slug_idx").on(t.slug),
+    index("subject_external_code_idx").on(t.externalCode),
   ],
 );
 
@@ -346,6 +347,45 @@ export const evaluations = createTable(
         whoSees: "editors",
       }),
 
+    // Display Settings
+    displaySettings: jsonb("display_settings")
+      .$type<{
+        itemsPerPage: number; // 1 = one item at a time, N = paginated
+        showProgressBar: boolean;
+        allowNavigation: boolean; // can go back to previous items?
+        shuffleItems: boolean;
+        shuffleOptions: boolean; // for MCQ options
+      }>()
+      .default({
+        itemsPerPage: 1,
+        showProgressBar: true,
+        allowNavigation: true,
+        shuffleItems: false,
+        shuffleOptions: false,
+      }),
+
+    // Time Settings
+    timeSettings: jsonb("time_settings")
+      .$type<{
+        deadline?: string; // ISO date when evaluation closes
+        timeLimit?: number; // minutes per attempt (null = unlimited)
+        allowLateSubmission: boolean;
+      }>()
+      .default({
+        allowLateSubmission: false,
+      }),
+
+    // Retry Settings
+    retrySettings: jsonb("retry_settings")
+      .$type<{
+        maxAttempts: number; // 0 = unlimited, 1 = no retries
+        showPreviousAnswers: boolean; // show what they answered before?
+      }>()
+      .default({
+        maxAttempts: 1,
+        showPreviousAnswers: false,
+      }),
+
     // Status
     status: varchar("status", { length: 20 }).default("draft"), // draft|published|active|closed
 
@@ -396,40 +436,74 @@ export const evaluationItems = createTable(
   ],
 );
 
-/* ========== RESPONSES (with opt-in anonymity) ========== */
-export const responses = createTable(
-  "response",
+/* ========== EVALUATION ATTEMPTS (tracks each try) ========== */
+export const evaluationAttempts = createTable(
+  "evaluation_attempt",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     evaluationId: uuid("evaluation_id")
       .references(() => evaluations.id, { onDelete: "cascade" })
-      .notNull(),
-    itemId: uuid("item_id")
-      .references(() => items.id, { onDelete: "cascade" })
       .notNull(),
 
     // Respondent identity
     respondentId: uuid("respondent_id").references(() => users.id, {
       onDelete: "set null",
     }),
-    respondentSessionId: varchar("respondent_session_id", { length: 64 }),
+    respondentSessionId: uuid("respondent_session_id"), // for anonymous users
     isAnonymous: boolean("is_anonymous").notNull().default(false),
 
-    // Answer data
+    // Attempt tracking
+    attemptNumber: integer("attempt_number").notNull().default(1),
+    status: varchar("status", { length: 20 }).notNull().default("in_progress"), // in_progress | submitted | abandoned
+    currentItemOrder: integer("current_item_order").default(1), // where they are in the evaluation
+
+    // Timing
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .default(sql`CURRENT_TIMESTAMP`)
+      .notNull(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true }),
+    timeSpentSeconds: integer("time_spent_seconds").default(0),
+
+    // Scoring (aggregated after submission)
+    totalScore: integer("total_score"),
+    maxPossibleScore: integer("max_possible_score"),
+  },
+  (t) => [
+    index("attempt_eval_idx").on(t.evaluationId),
+    index("attempt_respondent_idx").on(t.respondentId),
+    index("attempt_session_idx").on(t.respondentSessionId),
+    index("attempt_status_idx").on(t.status),
+  ],
+);
+
+/* ========== RESPONSES (linked to attempts, granular per-item) ========== */
+export const responses = createTable(
+  "response",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    attemptId: uuid("attempt_id")
+      .references(() => evaluationAttempts.id, { onDelete: "cascade" })
+      .notNull(),
+    itemId: uuid("item_id")
+      .references(() => items.id, { onDelete: "cascade" })
+      .notNull(),
+
+    // Answer data (all granular fields preserved for psychometry)
     answer: jsonb("answer").notNull(), // varies by item type
     isCorrect: boolean("is_correct"), // polls etc. may be null
     score: integer("score").default(0),
-    timeSpent: integer("time_spent"),
+    timeSpentSeconds: integer("time_spent_seconds"), // time on this specific item
 
     createdAt: timestamp("created_at", { withTimezone: true })
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+      () => new Date(),
+    ),
   },
   (t) => [
-    index("response_eval_idx").on(t.evaluationId),
+    index("response_attempt_idx").on(t.attemptId),
     index("response_item_idx").on(t.itemId),
-    index("response_respondent_idx").on(t.respondentId),
-    index("response_session_idx").on(t.respondentSessionId),
   ],
 );
 
@@ -575,6 +649,7 @@ export const evaluationsRelations = relations(evaluations, ({ one, many }) => ({
   }),
   creator: one(users, { fields: [evaluations.createdBy], references: [users.id] }),
   evaluationItems: many(evaluationItems),
+  attempts: many(evaluationAttempts),
 }));
 
 export const anonymousCreatorsRelations = relations(anonymousCreators, ({ one }) => ({
@@ -592,13 +667,24 @@ export const evaluationItemsRelations = relations(evaluationItems, ({ one }) => 
   item: one(items, { fields: [evaluationItems.itemId], references: [items.id] }),
 }));
 
-export const responsesRelations = relations(responses, ({ one }) => ({
+export const evaluationAttemptsRelations = relations(evaluationAttempts, ({ one, many }) => ({
   evaluation: one(evaluations, {
-    fields: [responses.evaluationId],
+    fields: [evaluationAttempts.evaluationId],
     references: [evaluations.id],
   }),
+  respondent: one(users, {
+    fields: [evaluationAttempts.respondentId],
+    references: [users.id],
+  }),
+  responses: many(responses),
+}));
+
+export const responsesRelations = relations(responses, ({ one }) => ({
+  attempt: one(evaluationAttempts, {
+    fields: [responses.attemptId],
+    references: [evaluationAttempts.id],
+  }),
   item: one(items, { fields: [responses.itemId], references: [items.id] }),
-  respondent: one(users, { fields: [responses.respondentId], references: [users.id] }),
 }));
 
 export const evaluationPermissionsRelations = relations(
