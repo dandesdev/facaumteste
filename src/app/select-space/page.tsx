@@ -4,14 +4,14 @@ import {
   organizationMembers,
   orgGroups,
   orgGroupMembers,
+  users,
 } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "~/server/supabaseServer";
-import { SelectSpaceButton } from "~/components/SelectSpaceButton";
-import Link from "next/link";
-import { Button } from "~/components/ui/button";
-import { Plus } from "lucide-react";
+import LogoutButton from "~/components/LogoutButton";
+import { SpaceList } from "~/components/SpaceList";
+
 
 export default async function SelectSpacePage() {
   const supabase = await createSupabaseServerClient();
@@ -20,6 +20,14 @@ export default async function SelectSpacePage() {
   if (error || !data?.user) redirect("/");
 
   const user = data.user;
+
+  // Fetch user details from our DB
+  const dbUser = await db.query.users.findFirst({
+    where: eq(users.id, user.id),
+  });
+
+  const userName = dbUser?.name ?? user.email?.split("@")[0] ?? "Usuário";
+  const userEmail = user.email ?? "";
 
   // Busca organizações
   const orgs = await db
@@ -48,77 +56,50 @@ export default async function SelectSpacePage() {
     .where(eq(orgGroupMembers.userId, user.id));
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="flex w-full max-w-md flex-col gap-8 rounded-xl border border-gray-100 bg-white p-8 shadow-xl">
-        <div className="text-center">
+    <div className="min-h-screen bg-gray-50">
+      {/* Top navbar with user info */}
+      <nav className="border-b bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-14 items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-medium text-gray-900">
+                FaçaUmTeste
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="group relative">
+                <span className="text-sm text-gray-700 cursor-default">
+                  <span className="group-hover:hidden">{userName}</span>
+                  <span className="hidden group-hover:inline text-gray-500">
+                    {userEmail}
+                  </span>
+                </span>
+              </div>
+              <LogoutButton variant="ghost" />
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main content */}
+      <main className="flex flex-col items-center justify-center p-4 pt-16">
+        <div className="flex w-full max-w-md flex-col gap-6 rounded-xl border border-gray-100 bg-white p-8 shadow-xl">
+          <div>
             <h1 className="text-2xl font-bold text-gray-900">
-            Selecionar Espaço
+              Selecionar Espaço
             </h1>
-            <p className="text-sm text-gray-500 mt-2">Escolha onde você quer trabalhar hoje</p>
+            <p className="text-sm text-gray-500 mt-2">
+              Escolha onde você quer trabalhar hoje
+            </p>
+          </div>
+
+          <SpaceList
+            userId={user.id}
+            organizations={orgs}
+            groups={groups}
+          />
         </div>
-
-        <div className="space-y-6">
-            {/* 1. Espaço Pessoal */}
-            <div className="space-y-2">
-            <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest pl-1">
-                Pessoal
-            </h2>
-            <SelectSpaceButton 
-                kind="user" 
-                id={user.id} 
-                label="Meu Espaço Pessoal" 
-            />
-            </div>
-
-            {/* 2. Organizações */}
-            <div className="space-y-2">
-                <h2 className="flex items-center justify-between text-xs font-semibold text-gray-400 uppercase tracking-widest pl-1">
-                    <span>Organizações</span>
-                    <Link href="/organization/new" className="text-blue-600 hover:text-blue-700">
-                        <Plus className="h-4 w-4" />
-                    </Link>
-                </h2>
-                
-                {orgs.length > 0 ? (
-                    orgs.map((org) => (
-                    <SelectSpaceButton
-                        key={org.id}
-                        kind="organization"
-                        id={org.id}
-                        label={org.name}
-                    />
-                    ))
-                ) : (
-                    <div className="p-4 rounded-lg bg-gray-50 border border-dashed border-gray-200 text-center">
-                        <p className="text-sm text-gray-500 mb-3">Nenhuma organização encontrada</p>
-                        <Link href="/organization/new">
-                            <Button variant="outline" size="sm" className="w-full">
-                                <Plus className="mr-2 h-3 w-3" />
-                                Criar Nova Organização
-                            </Button>
-                        </Link>
-                    </div>
-                )}
-            </div>
-
-            {/* 3. Grupos (Opcional, se houver) */}
-            {groups.length > 0 && (
-            <div className="space-y-2">
-                <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest pl-1">
-                Grupos
-                </h2>
-                {groups.map((group) => (
-                <SelectSpaceButton
-                    key={group.id}
-                    kind="group"
-                    id={group.id}
-                    label={group.name}
-                />
-                ))}
-            </div>
-            )}
-        </div>
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }

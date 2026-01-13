@@ -2,19 +2,16 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "~/server/supabaseServer";
 import { db } from "~/server/db";
-import { organizations, users } from "~/server/db/schema";
+import { organizations, users, orgGroups, orgGroupMembers } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
-import Link from "next/link";
 import {
   LayoutDashboard,
   FileText,
   Database,
   Settings,
-  Building2,
-  User,
-  LogOut,
 } from "lucide-react";
 import LogoutButton from "~/components/LogoutButton";
+import { SpaceSwitcher } from "~/components/SpaceSwitcher";
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +27,7 @@ import {
   SidebarRail,
   SidebarTrigger,
 } from "~/components/ui/sidebar";
+import Link from "next/link";
 
 export default async function DashboardLayout({
   children,
@@ -50,7 +48,7 @@ export default async function DashboardLayout({
     redirect("/select-space");
   }
 
-  let activeSpace: { kind: "organization" | "user"; id: string };
+  let activeSpace: { kind: "organization" | "user" | "group"; id: string };
   try {
     activeSpace = JSON.parse(activeSpaceCookie.value) as typeof activeSpace;
   } catch {
@@ -58,8 +56,7 @@ export default async function DashboardLayout({
   }
 
   // Fetch details about the space
-  let spaceName = "Espaço Pessoal";
-  let spaceIcon = <User className="h-4 w-4" />;
+  let spaceName = "Meu Espaço";
   let isPersonal = true;
 
   if (activeSpace.kind === "organization") {
@@ -69,7 +66,16 @@ export default async function DashboardLayout({
     if (org) {
       spaceName = org.name;
       isPersonal = false;
-      spaceIcon = <Building2 className="h-4 w-4" />;
+    } else {
+      redirect("/select-space");
+    }
+  } else if (activeSpace.kind === "group") {
+    const group = await db.query.orgGroups.findFirst({
+      where: eq(orgGroups.id, activeSpace.id),
+    });
+    if (group) {
+      spaceName = group.name;
+      isPersonal = false;
     } else {
       redirect("/select-space");
     }
@@ -82,9 +88,20 @@ export default async function DashboardLayout({
     }
   }
 
+  // Fetch groups for the SpaceSwitcher
+  const userGroups = await db
+    .select({
+      id: orgGroups.id,
+      name: orgGroups.name,
+      organizationId: orgGroups.organizationId,
+    })
+    .from(orgGroupMembers)
+    .innerJoin(orgGroups, eq(orgGroups.id, orgGroupMembers.groupId))
+    .where(eq(orgGroupMembers.userId, data.user.id));
+
   const navigationItems = [
     { href: "/dashboard", icon: LayoutDashboard, label: "Início" },
-    { href: "/dashboard/evaluations", icon: FileText, label: "Avaliações" },
+    { href: "/dashboard/evaluations", icon: FileText, label: "Testes" },
     { href: "/dashboard/items", icon: Database, label: "Banco de Itens" },
     ...(!isPersonal
       ? [{ href: "/dashboard/settings", icon: Settings, label: "Configurações" }]
@@ -95,23 +112,15 @@ export default async function DashboardLayout({
     <SidebarProvider>
       <Sidebar collapsible="icon">
         <SidebarHeader>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton size="lg" tooltip="Trocar espaço" asChild>
-                <Link href="/select-space">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                    {spaceIcon}
-                  </div>
-                  <div className="flex flex-col gap-0.5 leading-none">
-                    <span className="font-semibold">{spaceName}</span>
-                    <span className="text-xs text-muted-foreground">
-                      Trocar espaço
-                    </span>
-                  </div>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          <SpaceSwitcher
+            currentSpace={{
+              kind: activeSpace.kind,
+              id: activeSpace.id,
+              name: spaceName,
+            }}
+            userId={data.user.id}
+            groups={userGroups}
+          />
         </SidebarHeader>
 
         <SidebarContent>

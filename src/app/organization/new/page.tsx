@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
 import { Button } from "~/components/ui/button";
@@ -9,11 +9,17 @@ import { Label } from "~/components/ui/label";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 
+// Helper to generate slug from name
+function generateSlug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]/g, "-").replace(/-+/g, "-").replace(/^-|-$/g, "");
+}
+
 export default function CreateOrganizationPage() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugError, setSlugError] = useState("");
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   const createOrgMutation = api.organization.create.useMutation({
     onSuccess: async (data) => {
@@ -43,8 +49,8 @@ export default function CreateOrganizationPage() {
     e.preventDefault();
     setSlugError("");
     
-    // Auto-generate slug if dry
-    const finalSlug = slug || name.toLowerCase().replace(/[^a-z0-9]/g, "-");
+    // Auto-generate slug if empty
+    const finalSlug = slug || generateSlug(name);
     
     if (finalSlug.length < 3) {
         setSlugError("O identificador deve ter pelo menos 3 caracteres.");
@@ -55,6 +61,21 @@ export default function CreateOrganizationPage() {
       name,
       slug: finalSlug,
     });
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value;
+    setName(newName);
+    
+    // Auto-update slug only if user hasn't manually edited it
+    if (!slugManuallyEdited) {
+      setSlug(generateSlug(newName));
+    }
+  };
+
+  const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSlugManuallyEdited(true);
+    setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""));
   };
 
   return (
@@ -74,13 +95,7 @@ export default function CreateOrganizationPage() {
               id="name"
               placeholder="Ex: Escola Futuro"
               value={name}
-              onChange={(e) => {
-                  setName(e.target.value);
-                  // Auto-update slug if user hasn't manually edited it much (simple heuristic)
-                  if (!slug || slug === e.target.value.slice(0, -1).toLowerCase().replace(/[^a-z0-9]/g, "-")) {
-                      setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, "-"));
-                  }
-              }}
+              onChange={handleNameChange}
               required
             />
           </div>
@@ -94,7 +109,7 @@ export default function CreateOrganizationPage() {
                     className="flex-1 bg-transparent outline-none text-gray-900 placeholder:text-gray-400 ml-1"
                     placeholder="escola-futuro"
                     value={slug}
-                    onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                    onChange={handleSlugChange}
                     required
                     minLength={3}
                 />

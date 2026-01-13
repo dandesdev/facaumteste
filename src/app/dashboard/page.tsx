@@ -27,9 +27,9 @@ export default function DashboardPage() {
             <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center text-blue-600 mb-2">
               <Plus className="h-6 w-6" />
             </div>
-            <CardTitle>Nova Avaliação</CardTitle>
+            <CardTitle>Novo Teste</CardTitle>
             <CardDescription>
-              Crie uma avaliação do zero ou baseada em um modelo.
+              Crie um teste do zero ou baseado em um modelo.
             </CardDescription>
           </CardHeader>
           <CardFooter>
@@ -89,7 +89,7 @@ export default function DashboardPage() {
           <Card>
             <CardContent className="py-8">
               <p className="text-center text-sm text-muted-foreground">
-                Nenhuma avaliação em rascunho.
+                Nenhum teste em rascunho.
               </p>
             </CardContent>
           </Card>
@@ -100,7 +100,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold flex items-center gap-2">
               <CheckCircle className="h-5 w-5 text-green-500" />
-              Aplicadas
+              Aplicados
             </h2>
             <Link
               href="/dashboard/evaluations?status=published"
@@ -113,7 +113,7 @@ export default function DashboardPage() {
           <Card>
             <CardContent className="py-8">
               <p className="text-center text-sm text-muted-foreground">
-                Nenhuma avaliação publicada.
+                Nenhum teste publicado.
               </p>
             </CardContent>
           </Card>

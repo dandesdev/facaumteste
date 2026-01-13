@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Button } from "~/components/ui/button";
 import { useState } from "react";
+import { addRecentSpace } from "~/lib/recentSpaces";
 
 interface SpaceButtonProps {
   label: string;
@@ -17,6 +18,9 @@ export function SelectSpaceButton({ label, kind, id }: SpaceButtonProps) {
   const handleSelect = async () => {
     setLoading(true);
     try {
+      // Track as recent space
+      addRecentSpace({ kind, id, name: label });
+
       const res = await fetch("/api/set-active-space", {
         method: "POST",
         body: JSON.stringify({ kind, id }),
