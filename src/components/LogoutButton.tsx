@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "~/lib/supabaseBrowser";
-import { Button } from "./ui/button";
+import { LogOut } from "lucide-react";
+import { SidebarMenuButton } from "./ui/sidebar";
 
 export default function LogoutButton() {
-
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
@@ -28,8 +28,13 @@ export default function LogoutButton() {
   };
 
   return (
-    <Button onClick={handleLogout} disabled={loading}>
-      {loading ? "Signing out..." : "Sign out"}
-    </Button>
+    <SidebarMenuButton
+      onClick={handleLogout}
+      disabled={loading}
+      tooltip="Sair"
+    >
+      <LogOut className="h-4 w-4" />
+      <span>{loading ? "Saindo..." : "Sair"}</span>
+    </SidebarMenuButton>
   );
 }
