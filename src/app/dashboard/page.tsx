@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { api } from "~/trpc/react";
-import { Plus, FileEdit, CheckCircle, Database, Clock } from "lucide-react";
+import { Plus, FileEdit, CheckCircle, Database } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 export default function DashboardPage() {
