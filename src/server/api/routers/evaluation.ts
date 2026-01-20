@@ -6,7 +6,7 @@ import {
     evaluations,
     organizationMembers,
 } from "~/server/db/schema";
-import { eq, and, desc, inArray } from "drizzle-orm";
+import { eq, and, desc, inArray, isNull } from "drizzle-orm";
 
 export const evaluationRouter = createTRPCRouter({
     /**
@@ -54,10 +54,7 @@ export const evaluationRouter = createTRPCRouter({
             return await ctx.db.query.evaluations.findMany({
                 where: and(
                     eq(evaluations.createdBy, ctx.user.id),
-                    // Explicitly check for null organizationId for personal space
-                    // or we could just list everything created by user regardless of org? 
-                    // Usually "Personal" means orgId is null.
-                    input.organizationId === null ? undefined : eq(evaluations.organizationId, null as any) // workaround for null check if needed, strictly speaking isnull
+                    isNull(evaluations.organizationId)
                 ),
                 orderBy: [desc(evaluations.createdAt)],
             });

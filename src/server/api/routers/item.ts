@@ -6,7 +6,7 @@ import {
     items,
     organizationMembers,
 } from "~/server/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, isNull } from "drizzle-orm";
 
 export const itemRouter = createTRPCRouter({
     /**
@@ -62,7 +62,7 @@ export const itemRouter = createTRPCRouter({
             return await ctx.db.query.items.findMany({
                 where: and(
                     eq(items.createdBy, ctx.user.id),
-                    input.organizationId === null ? undefined : eq(items.organizationId, null as any),
+                    isNull(items.organizationId),
                     input.type ? eq(items.type, input.type) : undefined
                 ),
                 orderBy: [desc(items.createdAt)],
