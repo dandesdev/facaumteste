@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
 import { LastLocationTracker } from "~/components/LastLocationTracker";
+import { Toaster } from "~/components/ui/sonner";
 import { Suspense } from "react";
 
 export const metadata: Metadata = {
@@ -28,7 +29,9 @@ export default function RootLayout({
           <LastLocationTracker />
         </Suspense>
         <TRPCReactProvider>{children}</TRPCReactProvider>
+        <Toaster richColors closeButton />
       </body>
     </html>
   );
 }
+

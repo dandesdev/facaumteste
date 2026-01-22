@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import LogoutButton from "~/components/LogoutButton";
 import { SpaceSwitcher } from "~/components/SpaceSwitcher";
+import { SpaceProvider } from "~/contexts/SpaceContext";
 import {
   Sidebar,
   SidebarContent,
@@ -158,7 +159,11 @@ export default async function DashboardLayout({
           <SidebarTrigger className="-ml-2" />
           <div className="flex-1" />
         </header>
-        <div className="container mx-auto p-6">{children}</div>
+        <div className="container mx-auto p-6">
+          <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName }}>
+            {children}
+          </SpaceProvider>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
