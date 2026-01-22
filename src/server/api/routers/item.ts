@@ -27,8 +27,8 @@ export const itemRouter = createTRPCRouter({
                         "matching",
                     ])
                     .optional(),
-                status: z.enum(["draft", "published", "archived", "deleted"]).optional(),
-                includeDeleted: z.boolean().optional().default(false),
+                status: z.enum(["draft", "published", "archived"]).optional(),
+                showDeleted: z.boolean().optional().default(false), // Show only deleted items (trash view)
                 search: z.string().optional(),
                 limit: z.number().min(1).max(100).default(10),
                 offset: z.number().min(0).default(0),
@@ -72,12 +72,18 @@ export const itemRouter = createTRPCRouter({
                 conditions.push(eq(items.type, input.type));
             }
 
-            // Status filter - hide deleted unless explicitly requested
+            // Status filter
             if (input.status) {
                 conditions.push(eq(items.status, input.status));
-            } else if (!input.includeDeleted) {
-                // By default, exclude deleted items
-                conditions.push(sql`${items.status} != 'deleted'`);
+            }
+
+            // Deleted filter - use deletedAt field
+            if (input.showDeleted) {
+                // Trash view: only show deleted items
+                conditions.push(sql`${items.deletedAt} IS NOT NULL`);
+            } else {
+                // Normal view: only show active items
+                conditions.push(isNull(items.deletedAt));
             }
 
             // Search filter - search in ID or statement text
@@ -116,6 +122,44 @@ export const itemRouter = createTRPCRouter({
                 limit: input.limit,
                 offset: input.offset,
             };
+        }),
+
+    /**
+     * Get total item count for scale detection
+     * Used to decide caching strategy (client-side vs server-side filtering)
+     * This is cached client-side for ~10 minutes
+     */
+    getCount: protectedProcedure
+        .input(z.object({ organizationId: z.string().uuid().optional() }))
+        .query(async ({ ctx, input }) => {
+            const conditions = [];
+
+            if (input.organizationId) {
+                // Verify membership
+                const membership = await ctx.db.query.organizationMembers.findFirst({
+                    where: and(
+                        eq(organizationMembers.organizationId, input.organizationId),
+                        eq(organizationMembers.userId, ctx.user.id)
+                    ),
+                });
+                if (!membership) {
+                    return { count: 0 };
+                }
+                conditions.push(eq(items.organizationId, input.organizationId));
+            } else {
+                conditions.push(eq(items.createdBy, ctx.user.id));
+                conditions.push(isNull(items.organizationId));
+            }
+
+            // Exclude deleted items from count
+            conditions.push(isNull(items.deletedAt));
+
+            const [result] = await ctx.db
+                .select({ count: count() })
+                .from(items)
+                .where(and(...conditions));
+
+            return { count: result?.count ?? 0 };
         }),
 
     /**
@@ -395,11 +439,11 @@ export const itemRouter = createTRPCRouter({
                 }
             }
 
-            // Soft delete all items
+            // Soft delete all items - set deletedAt, keep status unchanged
             const deletedItems = await ctx.db
                 .update(items)
                 .set({
-                    status: "deleted",
+                    deletedAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .where(or(...input.ids.map((id) => eq(items.id, id))))
@@ -409,7 +453,7 @@ export const itemRouter = createTRPCRouter({
         }),
 
     /**
-     * Restore deleted items (sets status back to 'draft')
+     * Restore deleted items (clears deletedAt, keeps status intact)
      */
     restore: protectedProcedure
         .input(z.object({ ids: z.array(z.string().uuid()) }))
@@ -421,11 +465,11 @@ export const itemRouter = createTRPCRouter({
                 });
             }
 
-            // Verify items exist and are deleted
+            // Verify items exist and are deleted (have deletedAt set)
             const itemsToRestore = await ctx.db.query.items.findMany({
                 where: and(
                     or(...input.ids.map((id) => eq(items.id, id))),
-                    eq(items.status, "deleted")
+                    sql`${items.deletedAt} IS NOT NULL`
                 ),
             });
 
@@ -462,11 +506,11 @@ export const itemRouter = createTRPCRouter({
                 }
             }
 
-            // Restore items
+            // Restore items - clear deletedAt, status stays unchanged
             const restoredItems = await ctx.db
                 .update(items)
                 .set({
-                    status: "draft",
+                    deletedAt: null,
                     updatedAt: new Date(),
                 })
                 .where(or(...input.ids.map((id) => eq(items.id, id))))
@@ -488,11 +532,11 @@ export const itemRouter = createTRPCRouter({
                 });
             }
 
-            // Verify items exist and are already deleted
+            // Verify items exist and are already deleted (have deletedAt set)
             const itemsToDelete = await ctx.db.query.items.findMany({
                 where: and(
                     or(...input.ids.map((id) => eq(items.id, id))),
-                    eq(items.status, "deleted")
+                    sql`${items.deletedAt} IS NOT NULL`
                 ),
             });
 

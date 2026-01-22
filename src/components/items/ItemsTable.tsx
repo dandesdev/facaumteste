@@ -29,6 +29,7 @@ import {
 } from "~/components/ui/tooltip";
 import { ChevronDown, ArrowUpDown } from "lucide-react";
 import { SelectionCheckbox } from "./SelectionCheckbox";
+import { CopyableId } from "./CopyableId";
 import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG } from "./item-utils";
 import type { ItemType } from "./item-utils";
 
@@ -55,6 +56,7 @@ type SortDir = "asc" | "desc";
 
 const DEFAULT_COLUMNS = {
   select: true,
+  itemId: true,
   type: true,
   statement: true,
   updatedAt: true,
@@ -151,6 +153,12 @@ export function ItemsTable({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuCheckboxItem
+              checked={columns.itemId}
+              onCheckedChange={() => toggleColumn("itemId")}
+            >
+              ID
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
               checked={columns.type}
               onCheckedChange={() => toggleColumn("type")}
             >
@@ -202,6 +210,9 @@ export function ItemsTable({
                     onSelect={onSelectAll}
                   />
                 </TableHead>
+              )}
+              {columns.itemId && (
+                <TableHead className="w-[100px]">ID</TableHead>
               )}
               {columns.type && (
                 <TableHead className="w-[140px]">
@@ -257,6 +268,11 @@ export function ItemsTable({
                               order={order}
                               onSelect={(sel) => onSelectChange(item.id, sel)}
                             />
+                          </TableCell>
+                        )}
+                        {columns.itemId && (
+                          <TableCell>
+                            <CopyableId id={item.id} />
                           </TableCell>
                         )}
                         {columns.type && (

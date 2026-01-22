@@ -7,7 +7,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import Link from "next/link";
-import { Plus, LayoutGrid, Table2, Trash2 } from "lucide-react";
+import { Plus, LayoutGrid, Table2, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "~/components/ui/button";
 import {
@@ -46,7 +46,7 @@ import {
 } from "~/components/items";
 
 type ViewMode = "cards" | "table";
-type StatusFilter = "all" | "draft" | "published" | "archived" | "deleted";
+type StatusFilter = "all" | "draft" | "published" | "archived";
 
 const PAGE_SIZES = [5, 10, 20] as const;
 
@@ -60,6 +60,7 @@ export default function ItemsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<ItemType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [showDeleted, setShowDeleted] = useState(false); // Trash view toggle
 
   // Selection - array for ordering
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -74,7 +75,7 @@ export default function ItemsPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [search, typeFilter, statusFilter, pageSize]);
+  }, [search, typeFilter, statusFilter, pageSize, showDeleted]);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -93,24 +94,72 @@ export default function ItemsPage() {
     organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
     type: typeFilter === "all" ? undefined : typeFilter,
     status: statusFilter === "all" ? undefined : statusFilter,
+    showDeleted,
     search: debouncedSearch || undefined,
     limit: fetchLimit,
     offset: fetchOffset,
   });
 
-  // Mutations with optimistic updates
+
+  // Mutations with optimistic updates - manipulate cache directly
   const utils = api.useUtils();
+
+  // Get current query key for cache manipulation
+  const queryInput = {
+    organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
+    type: typeFilter === "all" ? undefined : typeFilter,
+    status: statusFilter === "all" ? undefined : statusFilter,
+    showDeleted,
+    search: debouncedSearch || undefined,
+    limit: fetchLimit,
+    offset: fetchOffset,
+  };
 
   const deleteManyMutation = api.item.deleteMany.useMutation({
     onMutate: async ({ ids }) => {
-      // Cancel any outgoing refetches
+      // Cancel outgoing refetches
       await utils.item.list.cancel();
-      // Optimistically remove from selection and UI will hide them
+
+      // Get current data
+      const previousData = utils.item.list.getData(queryInput);
+
+      // Identify items being deleted for moving to trash cache
+      const deletedItems = previousData?.items.filter((item) => ids.includes(item.id)) ?? [];
+
+      // Optimistically remove items from current (active) cache
+      if (previousData) {
+        utils.item.list.setData(queryInput, {
+          ...previousData,
+          items: previousData.items.filter((item) => !ids.includes(item.id)),
+          total: previousData.total - ids.length,
+        });
+      }
+
+      // Optimistically ADD items to trash cache
+      // We assume the user would go to trash with same filters (search/type) but showDeleted=true
+      const trashQueryInput = { ...queryInput, showDeleted: true };
+      const trashData = utils.item.list.getData(trashQueryInput);
+
+      if (trashData && deletedItems.length > 0) {
+        // Add deleted items to start of trash list (assuming date sort desc)
+        // We need to update their deletedAt to now for correctness in UI if used
+        const now = new Date();
+        const itemsWithDeletedAt = deletedItems.map(item => ({ ...item, deletedAt: now }));
+        
+        utils.item.list.setData(trashQueryInput, {
+          ...trashData,
+          items: [...itemsWithDeletedAt, ...trashData.items],
+          total: trashData.total + deletedItems.length,
+        });
+      }
+
+      // Clear selection
       setSelectedIds([]);
+
+      // Return context for rollback
+      return { previousData, trashData };
     },
     onSuccess: (result) => {
-      // Refetch to get fresh data
-      void utils.item.list.invalidate();
       // Show success toast with undo
       toast.success(`${result.count} ${result.count === 1 ? "item excluído" : "itens excluídos"}`, {
         action: {
@@ -121,47 +170,113 @@ export default function ItemsPage() {
         },
         duration: 5000,
       });
-    },
-    onError: (error) => {
-      // Revert on error
+      // Sync in background
       void utils.item.list.invalidate();
+      void utils.item.getCount.invalidate();
+    },
+    onError: (error, _variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        utils.item.list.setData(queryInput, context.previousData);
+      }
+      // Rollback trash data
+      if (context?.trashData) {
+        const trashQueryInput = { ...queryInput, showDeleted: true };
+        utils.item.list.setData(trashQueryInput, context.trashData);
+      }
       toast.error("Erro ao excluir itens", { description: error.message });
     },
   });
 
   const restoreMutation = api.item.restore.useMutation({
-    onMutate: async () => {
+    onMutate: async ({ ids }) => {
       await utils.item.list.cancel();
+
+      // Get current data (in trash view)
+      const previousData = utils.item.list.getData(queryInput);
+
+      // Identify items being restored
+      const restoredItems = previousData?.items.filter((item) => ids.includes(item.id)) ?? [];
+
+      // Optimistically remove restored items from trash view
+      if (previousData && showDeleted) {
+        utils.item.list.setData(queryInput, {
+          ...previousData,
+          items: previousData.items.filter((item) => !ids.includes(item.id)),
+          total: previousData.total - ids.length,
+        });
+      }
+
+      // Optimistically ADD items to Active cache
+      const activeQueryInput = { ...queryInput, showDeleted: false };
+      const activeData = utils.item.list.getData(activeQueryInput);
+
+      if (activeData && restoredItems.length > 0) {
+        // Add restored items to start of active list (approximate position)
+        // Clear deletedAt
+        const itemsActive = restoredItems.map(item => ({ ...item, deletedAt: null }));
+
+        utils.item.list.setData(activeQueryInput, {
+          ...activeData,
+          items: [...itemsActive, ...activeData.items],
+          total: activeData.total + restoredItems.length,
+        });
+      }
+
       setSelectedIds([]);
+      return { previousData, activeData };
     },
     onSuccess: (result) => {
-      void utils.item.list.invalidate();
       toast.success(`${result.count} ${result.count === 1 ? "item restaurado" : "itens restaurados"}`);
-    },
-    onError: (error) => {
+      // Sync both views
       void utils.item.list.invalidate();
+      void utils.item.getCount.invalidate();
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousData) {
+        utils.item.list.setData(queryInput, context.previousData);
+      }
+      if (context?.activeData) {
+        const activeQueryInput = { ...queryInput, showDeleted: false };
+        utils.item.list.setData(activeQueryInput, context.activeData);
+      }
       toast.error("Erro ao restaurar itens", { description: error.message });
     },
   });
 
   const permanentDeleteMutation = api.item.permanentDelete.useMutation({
-    onMutate: async () => {
+    onMutate: async ({ ids }) => {
       await utils.item.list.cancel();
+
+      const previousData = utils.item.list.getData(queryInput);
+
+      // Optimistically remove items
+      if (previousData) {
+        utils.item.list.setData(queryInput, {
+          ...previousData,
+          items: previousData.items.filter((item) => !ids.includes(item.id)),
+          total: previousData.total - ids.length,
+        });
+      }
+
       setSelectedIds([]);
-      setConfirmText(""); // Reset confirm text
+      setConfirmText("");
+      return { previousData };
     },
     onSuccess: (result) => {
-      void utils.item.list.invalidate();
       toast.success(`${result.count} ${result.count === 1 ? "item excluído permanentemente" : "itens excluídos permanentemente"}`);
-    },
-    onError: (error) => {
       void utils.item.list.invalidate();
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousData) {
+        utils.item.list.setData(queryInput, context.previousData);
+      }
       toast.error("Erro ao excluir permanentemente", { description: error.message });
     },
   });
 
   // Check if viewing deleted items (trash)
-  const isViewingTrash = statusFilter === "deleted";
+  const isViewingTrash = showDeleted;
 
   // Get items for current page from prefetched data
   const pageItems = useMemo(() => {
@@ -286,6 +401,8 @@ export default function ItemsPage() {
           onTypeChange={setTypeFilter}
           status={statusFilter}
           onStatusChange={setStatusFilter}
+          showDeleted={showDeleted}
+          onShowDeletedChange={setShowDeleted}
         />
 
         <div className="flex items-center gap-2">
@@ -347,20 +464,37 @@ export default function ItemsPage() {
           </Tooltip>
         </TooltipProvider>
 
-        <span className="text-sm font-medium min-w-[140px]">
+        <span className="text-sm font-medium min-w-[140px] flex items-center gap-2">
           {selectedIds.length > 0
             ? `${selectedIds.length} ${selectedIds.length === 1 ? "item selecionado" : "itens selecionados"}`
             : "Selecione itens"}
+          {isFetching && (
+            <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+          )}
         </span>
 
-        <Button
-          variant="outline"
-          size="sm"
-          disabled
-          className={selectedIds.length === 0 ? "invisible" : ""}
-        >
-          Adicionar à avaliação
-        </Button>
+        {/* Add to test - only visible when NOT in trash */}
+        {!isViewingTrash && (
+          <Button
+            variant="outline"
+            size="sm"
+            disabled
+            className={selectedIds.length === 0 ? "invisible" : ""}
+          >
+            Adicionar à avaliação
+          </Button>
+        )}
+        {isViewingTrash && (
+          <Button
+            variant="outline"
+            size="sm"
+            className={selectedIds.length === 0 ? "invisible" : ""}
+            onClick={() => restoreMutation.mutate({ ids: selectedIds })}
+          >
+            <RotateCcw className="mr-1 h-4 w-4" />
+            Restaurar
+          </Button>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -368,7 +502,7 @@ export default function ItemsPage() {
           onClick={handleDeleteClick}
         >
           <Trash2 className="mr-1 h-4 w-4" />
-          Excluir
+          {isViewingTrash ? "Excluir permanentemente" : "Excluir"}
         </Button>
       </div>
 

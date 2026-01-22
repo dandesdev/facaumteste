@@ -212,6 +212,7 @@ export const items = createTable(
 
     // Status/visibility
     status: varchar("status", { length: 20 }).default("draft"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }), // Soft delete - null = active, set = deleted
     isPublic: boolean("is_public").default(false),
 
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -226,6 +227,7 @@ export const items = createTable(
     index("item_created_by_idx").on(t.createdBy),
     index("item_org_idx").on(t.organizationId),
     index("item_status_idx").on(t.status),
+    index("item_deleted_idx").on(t.deletedAt), // Index for filtering deleted items
   ],
 );
 

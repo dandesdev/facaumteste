@@ -15,6 +15,20 @@
       "when": 1767891194554,
       "tag": "0001_groovy_omega_flight",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1769085231885,
+      "tag": "0002_add_previous_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1769086082593,
+      "tag": "0003_add_deleted_at",
+      "breakpoints": true
     }
   ]
 }

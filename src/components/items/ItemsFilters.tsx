@@ -2,16 +2,16 @@
 
 /**
  * Items Filters Component
- * Search, type, and status filters for item bank
+ * Search, type, status filters, and trash toggle for item bank
  */
 
 import { Search, Trash2 } from "lucide-react";
 import { Input } from "~/components/ui/input";
+import { Button } from "~/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
@@ -22,8 +22,10 @@ interface ItemsFiltersProps {
   onSearchChange: (value: string) => void;
   type: ItemType | "all";
   onTypeChange: (value: ItemType | "all") => void;
-  status: "all" | "draft" | "published" | "archived" | "deleted";
-  onStatusChange: (value: "all" | "draft" | "published" | "archived" | "deleted") => void;
+  status: "all" | "draft" | "published" | "archived";
+  onStatusChange: (value: "all" | "draft" | "published" | "archived") => void;
+  showDeleted: boolean;
+  onShowDeletedChange: (value: boolean) => void;
 }
 
 export function ItemsFilters({
@@ -33,6 +35,8 @@ export function ItemsFilters({
   onTypeChange,
   status,
   onStatusChange,
+  showDeleted,
+  onShowDeletedChange,
 }: ItemsFiltersProps) {
   return (
     <div className="flex flex-wrap items-center gap-3">
@@ -62,8 +66,12 @@ export function ItemsFilters({
         </SelectContent>
       </Select>
 
-      {/* Status filter */}
-      <Select value={status} onValueChange={(v) => onStatusChange(v as "all" | "draft" | "published" | "archived" | "deleted")}>
+      {/* Status filter - disabled when viewing trash */}
+      <Select
+        value={showDeleted ? "all" : status}
+        onValueChange={(v) => onStatusChange(v as "all" | "draft" | "published" | "archived")}
+        disabled={showDeleted}
+      >
         <SelectTrigger className="w-[140px]">
           <SelectValue placeholder="Status" />
         </SelectTrigger>
@@ -72,15 +80,19 @@ export function ItemsFilters({
           <SelectItem value="draft">Rascunho</SelectItem>
           <SelectItem value="published">Publicado</SelectItem>
           <SelectItem value="archived">Arquivado</SelectItem>
-          <SelectSeparator />
-          <SelectItem value="deleted" className="text-muted-foreground">
-            <span className="flex items-center gap-1.5">
-              <Trash2 className="h-3.5 w-3.5" />
-              Lixeira
-            </span>
-          </SelectItem>
         </SelectContent>
       </Select>
+
+      {/* Trash toggle */}
+      <Button
+        variant={showDeleted ? "destructive" : "outline"}
+        size="sm"
+        onClick={() => onShowDeletedChange(!showDeleted)}
+        className={showDeleted ? "" : "text-muted-foreground hover:text-foreground"}
+      >
+        <Trash2 className="h-4 w-4 mr-1.5" />
+        {showDeleted ? "Sair da lixeira" : "Lixeira"}
+      </Button>
     </div>
   );
 }

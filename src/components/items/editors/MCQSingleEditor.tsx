@@ -92,8 +92,12 @@ export function MCQSingleEditor() {
       .slice(0, 5);
   }, [tagInput, existingTags, formData.tags]);
 
+  const utils = api.useUtils();
   const createItem = api.item.create.useMutation({
     onSuccess: () => {
+      // Invalidate item list cache so new item appears
+      void utils.item.list.invalidate();
+      void utils.item.getCount.invalidate();
       router.push("/dashboard/items");
     },
     onError: (error) => {

@@ -4,15 +4,10 @@ import { createSupabaseServerClient } from "~/server/supabaseServer";
 import { db } from "~/server/db";
 import { organizations, users, orgGroups, orgGroupMembers } from "~/server/db/schema";
 import { eq } from "drizzle-orm";
-import {
-  LayoutDashboard,
-  FileText,
-  Database,
-  Settings,
-} from "lucide-react";
 import LogoutButton from "~/components/LogoutButton";
 import { SpaceSwitcher } from "~/components/SpaceSwitcher";
 import { SpaceProvider } from "~/contexts/SpaceContext";
+import { SidebarNav } from "~/components/nav";
 import {
   Sidebar,
   SidebarContent,
@@ -101,70 +96,59 @@ export default async function DashboardLayout({
     .where(eq(orgGroupMembers.userId, data.user.id));
 
   const navigationItems = [
-    { href: "/dashboard", icon: LayoutDashboard, label: "Início" },
-    { href: "/dashboard/evaluations", icon: FileText, label: "Testes" },
-    { href: "/dashboard/items", icon: Database, label: "Banco de Itens" },
+    { href: "/dashboard", iconName: "LayoutDashboard", label: "Início" },
+    { href: "/dashboard/evaluations", iconName: "FileText", label: "Testes" },
+    { href: "/dashboard/items", iconName: "Database", label: "Banco de Itens" },
     ...(!isPersonal
-      ? [{ href: "/dashboard/settings", icon: Settings, label: "Configurações" }]
+      ? [{ href: "/dashboard/settings", iconName: "Settings", label: "Configurações" }]
       : []),
   ];
 
   return (
-    <SidebarProvider>
-      <Sidebar collapsible="icon">
-        <SidebarHeader>
-          <SpaceSwitcher
-            currentSpace={{
-              kind: activeSpace.kind,
-              id: activeSpace.id,
-              name: spaceName,
-            }}
-            userId={data.user.id}
-            groups={userGroups}
-          />
-        </SidebarHeader>
+    <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName }}>
+      <SidebarProvider>
+        <Sidebar collapsible="icon">
+          <SidebarHeader>
+            <SpaceSwitcher
+              currentSpace={{
+                kind: activeSpace.kind,
+                id: activeSpace.id,
+                name: spaceName,
+              }}
+              userId={data.user.id}
+              groups={userGroups}
+            />
+          </SidebarHeader>
 
-        <SidebarContent>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {navigationItems.map((item) => (
-                  <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton tooltip={item.label} asChild>
-                      <Link href={item.href}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.label}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </SidebarContent>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarNav items={navigationItems} />
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
 
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <LogoutButton />
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
+          <SidebarFooter>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <LogoutButton />
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarFooter>
 
-        <SidebarRail />
-      </Sidebar>
+          <SidebarRail />
+        </Sidebar>
 
-      <SidebarInset>
-        <header className="flex h-14 items-center gap-4 border-b px-6 lg:h-[60px]">
-          <SidebarTrigger className="-ml-2" />
-          <div className="flex-1" />
-        </header>
-        <div className="container mx-auto p-6">
-          <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName }}>
+        <SidebarInset>
+          <header className="flex h-14 items-center gap-4 border-b px-6 lg:h-[60px]">
+            <SidebarTrigger className="-ml-2" />
+            <div className="flex-1" />
+          </header>
+          <div className="container mx-auto p-6">
             {children}
-          </SpaceProvider>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+          </div>
+        </SidebarInset>
+      </SidebarProvider>
+    </SpaceProvider>
   );
 }

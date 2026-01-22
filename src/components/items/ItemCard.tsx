@@ -7,6 +7,7 @@
 
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { SelectionCheckbox } from "./SelectionCheckbox";
+import { CopyableId } from "./CopyableId";
 import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG } from "./item-utils";
 import type { ItemType } from "./item-utils";
 
@@ -59,7 +60,7 @@ export function ItemCard({ item, selected, selectionOrder, onSelect }: ItemCardP
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer group flex flex-col">
       <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
+        <div className="flex items-start justify-between gap-2">
           {/* Checkbox with reserved space for order badge */}
           <div className="flex items-center min-w-[50px]">
             {onSelect && (
@@ -70,9 +71,11 @@ export function ItemCard({ item, selected, selectionOrder, onSelect }: ItemCardP
               />
             )}
           </div>
+          {/* Item ID with copy button */}
+          <CopyableId id={item.id} className="flex-1" />
           {/* Status badge */}
           <span
-            className={`text-xs px-2 py-0.5 rounded-full ${
+            className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
               statusConfig.variant === "default"
                 ? "bg-primary text-primary-foreground"
                 : statusConfig.variant === "secondary"
