@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "~/lib/supabaseBrowser";
 import { LogOut } from "lucide-react";
-import { SidebarMenuButton, useSidebar } from "./ui/sidebar";
+import { SidebarMenuButton } from "./ui/sidebar";
 import { Button } from "./ui/button";
 
 interface LogoutButtonProps {

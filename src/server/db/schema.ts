@@ -8,6 +8,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  unique,
   uuid,
   varchar,
 } from "drizzle-orm/pg-core";
@@ -46,6 +47,12 @@ export const organizations = createTable("organization", {
         allowUserSkills?: boolean;
       };
       allowedSubjectRootIds?: string[]; // subject IDs allowed as roots
+      theme?: {
+        primary?: string; // rgb triplet "R G B"
+        secondary?: string;
+        accent?: string;
+        radius?: number;
+      };
     }>()
     .default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -85,6 +92,16 @@ export const orgGroups = createTable("org_group", {
     .notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
+  settings: jsonb("settings")
+    .$type<{
+      theme?: {
+        primary?: string;
+        secondary?: string;
+        accent?: string;
+        radius?: number;
+      };
+    }>()
+    .default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),
@@ -506,6 +523,8 @@ export const responses = createTable(
   (t) => [
     index("response_attempt_idx").on(t.attemptId),
     index("response_item_idx").on(t.itemId),
+    // Ensure one response per item per attempt
+    unique("response_attempt_item_unique").on(t.attemptId, t.itemId),
   ],
 );
 

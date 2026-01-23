@@ -1,0 +1,1 @@
+ALTER TABLE "facaumteste_response" ADD CONSTRAINT "response_attempt_item_unique" UNIQUE("attempt_id","item_id");

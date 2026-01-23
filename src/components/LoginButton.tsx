@@ -50,9 +50,9 @@ export default function LoginButton({disabled}:{disabled?: boolean}) {
           </svg>
         </div>
         <span className="gsi-material-button-contents">
-          Sign in with Google
+          Entrar com Google
         </span>
-        <span className="hidden">Sign in with Google</span>
+        <span className="hidden">Entrar com Google</span>
       </div>
     </Button>
   );

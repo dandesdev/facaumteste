@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
-type ActiveSpacePayload = {
-  kind: string;
-  id: string;
-}
+import { z } from "zod";
+
+const setActiveSpaceSchema = z.object({
+  kind: z.enum(["user", "organization", "group"]),
+  id: z.string().uuid(),
+});
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as ActiveSpacePayload;
-    const { kind, id } = body;
+    const body = await request.json();
+    const result = setActiveSpaceSchema.safeParse(body);
 
-    if (!kind || !id) {
+    if (!result.success) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
+
+    const { kind, id } = result.data;
+    // Removed legacy check since Zod handles it
+
+
 
     const cookieValue = JSON.stringify({ kind, id });
 

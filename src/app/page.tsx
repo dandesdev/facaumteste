@@ -25,20 +25,7 @@ export default async function Home() {
     <HydrateClient>
       <LastLocationRestorer fallback="/select-space" />
       <main className="flex min-h-screen flex-col items-center justify-center">
-        {/* <span className="min-w-full flex items-center justify-center gap-2 p-2">
-          <span className="hidden sm:flex flex-1 justify-center">
-            {data?.user?.email ? (
-              <span><LogoutButton /><span className="opacity-80">{data?.user?.email}</span></span>
-            ) : (
-              <span>
-                <LoginButton disabled={!authEnabled} />
-              </span>
-            )}
-          </span>
-          <span className="flex sm:hidden ml-auto">
-            <Info />
-          </span>
-        </span> */}
+
         <menu className="flex flex-1 flex-col flex-nowrap justify-center gap-2">
           <span className="block">
             <LoginButton disabled={!authEnabled} />

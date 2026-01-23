@@ -29,6 +29,20 @@
       "when": 1769086082593,
       "tag": "0003_add_deleted_at",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1769170925898,
+      "tag": "0004_silly_loki",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1769174382616,
+      "tag": "0005_oval_mantis",
+      "breakpoints": true
     }
   ]
 }

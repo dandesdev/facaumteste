@@ -6,6 +6,7 @@ import {
     items,
     organizationMembers,
 } from "~/server/db/schema";
+import { RichContentSchema } from "~/lib/schemas/lexical";
 import { eq, and, desc, isNull, or, ilike, sql, count } from "drizzle-orm";
 
 export const itemRouter = createTRPCRouter({
@@ -277,9 +278,10 @@ export const itemRouter = createTRPCRouter({
                 organizationId: z.string().uuid().optional(),
 
                 // JSONB fields - accepting generic objects/any for now
-                statement: z.any(), // Lexical AST or simple string structure
-                structure: z.any(), // Structure of the question (options etc)
-                resolution: z.any().optional(), // Correct answer/explanation
+                // JSONB fields - validated against Lexical schema
+                statement: RichContentSchema,
+                structure: RichContentSchema,
+                resolution: RichContentSchema.optional(), // Correct answer/explanation
                 tags: z.array(z.string()).default([]),
                 status: z.enum(["draft", "published"]).default("draft"),
             })
@@ -328,9 +330,9 @@ export const itemRouter = createTRPCRouter({
         .input(
             z.object({
                 id: z.string().uuid(),
-                statement: z.any().optional(),
-                structure: z.any().optional(),
-                resolution: z.any().optional(),
+                statement: RichContentSchema.optional(),
+                structure: RichContentSchema.optional(),
+                resolution: RichContentSchema.optional(),
                 difficulty: z.enum(["easy", "medium", "hard"]).optional(),
                 tags: z.array(z.string()).optional(),
                 status: z.enum(["draft", "published", "archived"]).optional(),
