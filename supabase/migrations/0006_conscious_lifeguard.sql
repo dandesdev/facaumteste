@@ -1,0 +1,1 @@
+ALTER TABLE "facaumteste_user" ADD COLUMN "settings" jsonb DEFAULT '{}'::jsonb;

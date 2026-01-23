@@ -21,6 +21,16 @@ export const users = createTable("user", {
   email: varchar("email", { length: 255 }).notNull().unique(),
   name: varchar("name", { length: 255 }),
   role: varchar("role", { length: 50 }).notNull().default("default"), // "maybe super/admin or support"
+  settings: jsonb("settings")
+    .$type<{
+      theme?: {
+        primary?: string;
+        secondary?: string;
+        accent?: string;
+        radius?: number;
+      };
+    }>()
+    .default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
     .default(sql`CURRENT_TIMESTAMP`)
     .notNull(),

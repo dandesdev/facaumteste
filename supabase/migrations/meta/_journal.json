@@ -43,6 +43,13 @@
       "when": 1769174382616,
       "tag": "0005_oval_mantis",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1769175587479,
+      "tag": "0006_conscious_lifeguard",
+      "breakpoints": true
     }
   ]
 }

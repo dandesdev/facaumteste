@@ -99,9 +99,7 @@ export default async function DashboardLayout({
     { href: "/dashboard", iconName: "LayoutDashboard", label: "Início" },
     { href: "/dashboard/evaluations", iconName: "FileText", label: "Testes" },
     { href: "/dashboard/items", iconName: "Database", label: "Banco de Itens" },
-    ...(!isPersonal
-      ? [{ href: "/dashboard/settings", iconName: "Settings", label: "Configurações" }]
-      : []),
+    { href: "/dashboard/settings", iconName: "Settings", label: "Configurações" },
   ];
 
   return (
