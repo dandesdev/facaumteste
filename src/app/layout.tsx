@@ -4,6 +4,7 @@ import { type Metadata } from "next";
 import { Geist } from "next/font/google";
 
 import { TRPCReactProvider } from "~/trpc/react";
+import { ThemeProvider } from "~/components/theme/ThemeProvider";
 import { LastLocationTracker } from "~/components/LastLocationTracker";
 import { Toaster } from "~/components/ui/sonner";
 import { Suspense } from "react";
@@ -28,8 +29,12 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <LastLocationTracker />
         </Suspense>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
-        <Toaster richColors closeButton />
+        <TRPCReactProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster richColors closeButton />
+          </ThemeProvider>
+        </TRPCReactProvider>
       </body>
     </html>
   );

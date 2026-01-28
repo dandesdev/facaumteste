@@ -26,9 +26,10 @@ export const users = createTable("user", {
       theme?: {
         primary?: string;
         secondary?: string;
-        accent?: string;
+        accent?: string;      // CTAs, key interactions
         radius?: number;
       };
+      preferredMode?: "light" | "dark" | "system";
     }>()
     .default({}),
   createdAt: timestamp("created_at", { withTimezone: true })
@@ -60,7 +61,7 @@ export const organizations = createTable("organization", {
       theme?: {
         primary?: string; // rgb triplet "R G B"
         secondary?: string;
-        accent?: string;
+        accent?: string;      // CTAs, key interactions
         radius?: number;
       };
     }>()

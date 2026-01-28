@@ -2,9 +2,8 @@
 
 import { createSupabaseBrowserClient } from "~/lib/supabaseBrowser";
 import { env } from "~/env";
-import { Button } from "./ui/button";
 
-export default function LoginButton({disabled}:{disabled?: boolean}) {
+export default function LoginButton({ disabled }: { disabled?: boolean }) {
   const handleGoogleLogin = async () => {
     const supabase = createSupabaseBrowserClient();
     const base = env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
@@ -20,7 +19,11 @@ export default function LoginButton({disabled}:{disabled?: boolean}) {
   };
 
   return (
-    <Button className="gsi-material-button" onClick={handleGoogleLogin} disabled={disabled}>
+    <button 
+      className="gsi-material-button" 
+      onClick={handleGoogleLogin} 
+      disabled={disabled}
+    >
       <div className="gsi-material-button-state"></div>
       <div className="gsi-material-button-content-wrapper">
         <div className="gsi-material-button-icon">
@@ -29,6 +32,7 @@ export default function LoginButton({disabled}:{disabled?: boolean}) {
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 48 48"
             className="block"
+            style={{ display: "block" }} 
           >
             <path
               fill="#EA4335"
@@ -49,11 +53,12 @@ export default function LoginButton({disabled}:{disabled?: boolean}) {
             <path fill="none" d="M0 0h48v48H0z"></path>
           </svg>
         </div>
+        {/* UPDATED TEXT BELOW */}
         <span className="gsi-material-button-contents">
-          Entrar com Google
+          Fazer login com o Google
         </span>
-        <span className="hidden">Entrar com Google</span>
+        <span className="hidden">Fazer login com o Google</span>
       </div>
-    </Button>
+    </button>
   );
 }

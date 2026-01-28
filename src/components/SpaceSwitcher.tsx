@@ -178,14 +178,14 @@ export function SpaceSwitcher({
                 size="lg"
                 className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               >
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   {getSpaceIcon(currentSpace.kind)}
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-semibold">
                     {currentSpace.name}
                   </span>
-                  <span className="truncate text-xs text-muted-foreground">
+                  <span className="truncate text-xs opacity-60 pt-[0.5]">
                     {getSpaceLabel()}
                   </span>
                 </div>
@@ -193,15 +193,11 @@ export function SpaceSwitcher({
               </SidebarMenuButton>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+              className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg bg-sidebar backdrop-blur-sm"
               align="start"
               side={isMobile ? "bottom" : "right"}
               sideOffset={4}
             >
-              {/* Personal Space */}
-              <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Espaço Pessoal
-              </DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => handleSpaceChange("user", userId, userName)}
                 className="gap-2 p-2"
@@ -222,7 +218,7 @@ export function SpaceSwitcher({
                   <DropdownMenuSeparator />
                   <DropdownMenuLabel className="text-xs text-muted-foreground">
                     {hasMoreOrgs
-                      ? "Organizações acessadas por último"
+                      ? "Acessadas por último"
                       : "Organizações"}
                   </DropdownMenuLabel>
                   {displayedOrgs.map((org) => (
@@ -289,10 +285,10 @@ export function SpaceSwitcher({
                 className="gap-2 p-2"
                 disabled={isSwitching}
               >
-                <div className="flex size-6 items-center justify-center rounded-sm border bg-background">
+                <div className="flex size-6 items-center justify-center rounded-sm border">
                   <Plus className="size-4" />
                 </div>
-                <span className="text-muted-foreground">Nova Organização</span>
+                Nova Organização
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -300,10 +296,10 @@ export function SpaceSwitcher({
                 className="gap-2 p-2"
                 disabled={isSwitching}
               >
-                <div className="flex size-6 items-center justify-center rounded-sm border bg-background">
+                <div className="flex size-6 items-center justify-center rounded-sm border">
                   <ArrowRight className="size-4" />
                 </div>
-                <span className="text-muted-foreground">Todos os espaços</span>
+                Todos os espaços
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

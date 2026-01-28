@@ -56,14 +56,14 @@ export default async function SelectSpacePage() {
     .where(eq(orgGroupMembers.userId, user.id));
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Top navbar with user info */}
-      <nav className="border-b bg-white">
+      <nav className="flex-none border-b bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             <div className="flex items-center gap-4">
               <span className="text-sm font-medium text-gray-900">
-                FaçaUmTeste
+                Faça Um Teste
               </span>
             </div>
             <div className="flex items-center gap-4">
@@ -82,7 +82,8 @@ export default async function SelectSpacePage() {
       </nav>
 
       {/* Main content */}
-      <main className="flex flex-col items-center justify-center p-4 pt-16">
+      {/* Main content */}
+      <main className="flex-1 flex overflow-hidden items-center justify-center p-4">
         <div className="flex w-full max-w-md flex-col gap-6 rounded-xl border border-gray-100 bg-white p-8 shadow-xl">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">

@@ -8,6 +8,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ChevronUp, ChevronDown, Save, Send } from "lucide-react";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Label } from "~/components/ui/label";
@@ -194,7 +195,9 @@ export function MCQSingleEditor() {
 
   const handleSave = useCallback(
     (status: "draft" | "published") => {
-      if (!formData.statement) {
+      // Validate statement is present (TypeScript type narrowing)
+      const statement = formData.statement;
+      if (!statement) {
         alert("O enunciado é obrigatório");
         return;
       }
@@ -211,7 +214,7 @@ export function MCQSingleEditor() {
 
       const structure = {
         baseText: formData.baseText,
-        statement: formData.statement,
+        statement: statement,
         choices: formData.choices.map((c) => ({
           id: c.id,
           content: c.content,
@@ -225,7 +228,7 @@ export function MCQSingleEditor() {
         type: "mcq_single",
         difficulty: formData.difficulty,
         organizationId,
-        statement: formData.statement,
+        statement: statement,
         structure,
         resolution: formData.resolution,
         tags: formData.tags,
@@ -474,9 +477,10 @@ export function MCQSingleEditor() {
             {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map((tag) => (
-                  <span
+                  <Badge
                     key={tag}
-                    className="inline-flex items-center gap-1 px-2 py-1 bg-secondary text-secondary-foreground rounded-md text-sm"
+                    variant="secondary"
+                    className="gap-1"
                   >
                     {tag}
                     <button
@@ -486,7 +490,7 @@ export function MCQSingleEditor() {
                     >
                       ×
                     </button>
-                  </span>
+                  </Badge>
                 ))}
               </div>
             )}

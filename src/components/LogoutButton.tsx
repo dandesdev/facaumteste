@@ -8,7 +8,7 @@ import { SidebarMenuButton } from "./ui/sidebar";
 import { Button } from "./ui/button";
 
 interface LogoutButtonProps {
-  variant?: "sidebar" | "ghost" | "default";
+  variant?: "sidebar" | "ghost" | "default" | "quiet";
 }
 
 export default function LogoutButton({ variant = "sidebar" }: LogoutButtonProps) {
@@ -46,18 +46,20 @@ export default function LogoutButton({ variant = "sidebar" }: LogoutButtonProps)
     );
   }
 
-  // For use outside sidebar (e.g., select-space page)
+  // For use outside sidebar (e.g., header, select-space page)
   return (
     <Button
       onClick={handleLogout}
       disabled={loading}
-      variant={variant === "ghost" ? "ghost" : "default"}
-      size="sm"
+      variant={variant === "ghost" || variant === "quiet" ? "quiet" : "default"}
+      size={variant === "ghost" || variant === "quiet" ? "icon-sm" : "sm"}
     >
       <LogOut className="h-4 w-4" />
-      <span className="sr-only sm:not-sr-only sm:ml-2">
-        {loading ? "Saindo..." : "Sair"}
-      </span>
+      {variant !== "ghost" && variant !== "quiet" && (
+        <span className="sr-only sm:not-sr-only sm:ml-2">
+          {loading ? "Saindo..." : "Sair"}
+        </span>
+      )}
     </Button>
   );
 }

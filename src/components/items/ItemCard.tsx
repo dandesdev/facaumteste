@@ -5,6 +5,7 @@
  * Displays an item in card view with rich preview
  */
 
+import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
 import { SelectionCheckbox } from "./SelectionCheckbox";
 import { CopyableId } from "./CopyableId";
@@ -58,7 +59,7 @@ export function ItemCard({ item, selected, selectionOrder, onSelect }: ItemCardP
     : new Date(item.createdAt).toLocaleDateString("pt-BR");
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer group flex flex-col">
+    <Card className="hover:shadow-md transition-shadow group flex flex-col">
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between gap-2">
           {/* Checkbox with reserved space for order badge */}
@@ -74,17 +75,9 @@ export function ItemCard({ item, selected, selectionOrder, onSelect }: ItemCardP
           {/* Item ID with copy button */}
           <CopyableId id={item.id} className="flex-1" />
           {/* Status badge */}
-          <span
-            className={`text-xs px-2 py-0.5 rounded-full shrink-0 ${
-              statusConfig.variant === "default"
-                ? "bg-primary text-primary-foreground"
-                : statusConfig.variant === "secondary"
-                ? "bg-secondary text-secondary-foreground"
-                : "bg-muted text-muted-foreground"
-            }`}
-          >
+          <Badge variant={statusConfig.variant} className="shrink-0">
             {statusConfig.label}
-          </span>
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="flex-1 flex flex-col">

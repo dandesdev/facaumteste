@@ -65,26 +65,36 @@ export const organizationRouter = createTRPCRouter({
     getBySlug: protectedProcedure
         .input(z.object({ slug: z.string() }))
         .query(async ({ ctx, input }) => {
+            // Fetch org and membership separately to avoid Drizzle relation inference issues
             const org = await ctx.db.query.organizations.findFirst({
                 where: eq(organizations.slug, input.slug),
-                with: {
-                    members: {
-                        where: eq(organizationMembers.userId, ctx.user.id),
-                    },
-                },
             });
 
-            if (!org || org.members.length === 0) {
+            if (!org) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "Organization not found or you are not a member",
+                    message: "Organization not found",
                 });
             }
 
-            const { members, ...orgData } = org;
+            // Check membership separately
+            const membership = await ctx.db.query.organizationMembers.findFirst({
+                where: and(
+                    eq(organizationMembers.organizationId, org.id),
+                    eq(organizationMembers.userId, ctx.user.id)
+                ),
+            });
+
+            if (!membership) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "You are not a member of this organization",
+                });
+            }
+
             return {
-                ...orgData,
-                userRole: members[0]?.role, // current user's role
+                ...org,
+                userRole: membership.role,
             };
         }),
 
@@ -94,26 +104,36 @@ export const organizationRouter = createTRPCRouter({
     getById: protectedProcedure
         .input(z.object({ id: z.string().uuid() }))
         .query(async ({ ctx, input }) => {
+            // Fetch org and membership separately to avoid Drizzle relation inference issues
             const org = await ctx.db.query.organizations.findFirst({
                 where: eq(organizations.id, input.id),
-                with: {
-                    members: {
-                        where: eq(organizationMembers.userId, ctx.user.id),
-                    },
-                },
             });
 
-            if (!org || org.members.length === 0) {
+            if (!org) {
                 throw new TRPCError({
                     code: "NOT_FOUND",
-                    message: "Organization not found or you are not a member",
+                    message: "Organization not found",
                 });
             }
 
-            const { members, ...orgData } = org;
+            // Check membership separately
+            const membership = await ctx.db.query.organizationMembers.findFirst({
+                where: and(
+                    eq(organizationMembers.organizationId, input.id),
+                    eq(organizationMembers.userId, ctx.user.id)
+                ),
+            });
+
+            if (!membership) {
+                throw new TRPCError({
+                    code: "FORBIDDEN",
+                    message: "You are not a member of this organization",
+                });
+            }
+
             return {
-                ...orgData,
-                userRole: members[0]?.role,
+                ...org,
+                userRole: membership.role,
             };
         }),
 
@@ -202,12 +222,24 @@ export const organizationRouter = createTRPCRouter({
                 });
             }
 
+            // Merge settings properly (preserve existing, update provided)
+            const mergedSettings = input.settings 
+                ? {
+                    ...group.settings,
+                    ...input.settings,
+                    theme: {
+                        ...group.settings?.theme,
+                        ...input.settings.theme,
+                    },
+                }
+                : undefined;
+
             const [updated] = await ctx.db
                 .update(orgGroups)
                 .set({
                     ...(input.name ? { name: input.name } : {}),
                     ...(input.description ? { description: input.description } : {}),
-                    ...(input.settings ? { settings: input.settings } : {}),
+                    ...(mergedSettings ? { settings: mergedSettings } : {}),
                 })
                 .where(eq(orgGroups.id, input.id))
                 .returning();
@@ -262,13 +294,30 @@ export const organizationRouter = createTRPCRouter({
                 }
             }
 
-            // 3. Update
+            // 3. Get existing settings for merge
+            const existing = await ctx.db.query.organizations.findFirst({
+                where: eq(organizations.id, input.id),
+            });
+
+            // 4. Merge settings properly (preserve existing, update provided)
+            const mergedSettings = input.settings 
+                ? {
+                    ...existing?.settings,
+                    ...input.settings,
+                    theme: {
+                        ...existing?.settings?.theme,
+                        ...input.settings.theme,
+                    },
+                }
+                : undefined;
+
+            // 5. Update
             const [updated] = await ctx.db
                 .update(organizations)
                 .set({
                     ...(input.name ? { name: input.name } : {}),
                     ...(input.slug ? { slug: input.slug } : {}),
-                    ...(input.settings ? { settings: input.settings } : {}),
+                    ...(mergedSettings ? { settings: mergedSettings } : {}),
                 })
                 .where(eq(organizations.id, input.id))
                 .returning();

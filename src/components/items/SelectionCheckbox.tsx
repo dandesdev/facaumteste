@@ -28,6 +28,7 @@ export function SelectionCheckbox({
       <Checkbox
         checked={indeterminate ? "indeterminate" : selected}
         onCheckedChange={(checked) => onSelect(checked === true)}
+        className="cursor-pointer"
       />
       {selected && order !== undefined && (
         <span className="flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-primary text-primary-foreground text-xs font-bold">

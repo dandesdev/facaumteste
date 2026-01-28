@@ -64,9 +64,10 @@ export const ITEM_TYPE_CONFIG: Record<
 
 export const ITEM_STATUS_CONFIG: Record<
   string,
-  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" | "success" }
 > = {
   draft: { label: "Rascunho", variant: "secondary" },
-  published: { label: "Publicado", variant: "default" },
+  published: { label: "Publicado", variant: "success" },
   archived: { label: "Arquivado", variant: "outline" },
+  deleted: { label: "Excluído", variant: "destructive" },
 };

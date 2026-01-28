@@ -1,12 +1,16 @@
 /**
  * Item Types Registry
- * 
- * Defines all item types with their structure and scoring schemas.
+ *
+ * Defines all item types with their structure and answer schemas.
  * Based on specifications from general_plan.md "Tipos de itens" section.
+ * 
+ * CHANGES FROM ORIGINAL:
+ * - Uses relaxed LexicalEditorStateSchema that accepts any Lexical format
+ * - Keeps strict validation for domain-specific fields (choices, correctIndex, etc.)
  */
 
 import { z } from "zod";
-import { RichContentSchema, OptionalRichContentSchema } from "../lexical";
+import { RichContentSchema, OptionalRichContentSchema } from "./lexical";
 
 // =============================================================================
 // SHARED SCHEMAS
@@ -30,12 +34,11 @@ export const ChoiceSchema = z.object({
   comment: OptionalRichContentSchema,
 });
 
-
 // =============================================================================
 // 1. MCQ SINGLE - Múltipla Escolha de Resposta Única
 // =============================================================================
 
-export const MCQSingleStructureSchema = BaseItemFieldsSchema.extend({
+export const MCQSingleStructureSchema = z.object({
   choices: z.array(ChoiceSchema).min(2),
   correctIndex: z.number().int().min(0),
 });
@@ -54,7 +57,7 @@ export const MCQMultipleScoringModeSchema = z.enum([
   "at_most_x",
 ]);
 
-export const MCQMultipleStructureSchema = BaseItemFieldsSchema.extend({
+export const MCQMultipleStructureSchema = z.object({
   choices: z.array(ChoiceSchema).min(2),
   correctIndices: z.array(z.number().int().min(0)),
   scoringMode: MCQMultipleScoringModeSchema.default("all_correct_only"),
@@ -69,7 +72,7 @@ export const MCQMultipleAnswerSchema = z.object({
 // 3. TRUE FALSE SIMPLE - Certo/Errado Simples
 // =============================================================================
 
-export const TrueFalseStructureSchema = BaseItemFieldsSchema.extend({
+export const TrueFalseStructureSchema = z.object({
   correctAnswer: z.boolean(),
 });
 
@@ -88,7 +91,7 @@ export const TrueFalseStatementSchema = z.object({
   isTrue: z.boolean(),
 });
 
-export const TrueFalseMultiStructureSchema = BaseItemFieldsSchema.extend({
+export const TrueFalseMultiStructureSchema = z.object({
   statements: z.array(TrueFalseStatementSchema).min(2),
   generalComment: OptionalRichContentSchema,
 });
@@ -103,7 +106,7 @@ export const TrueFalseMultiAnswerSchema = z.object({
 
 export const BlankSchema = z.object({
   id: z.string(),
-    /** Position in text where blank appears */
+  /** Position in text where blank appears */
   position: z.number().int(),
   /** Accepted correct answers for this blank */
   acceptedAnswers: z.array(z.string()).min(1),
@@ -111,7 +114,7 @@ export const BlankSchema = z.object({
   caseSensitive: z.boolean().default(false),
 });
 
-export const FillBlankStructureSchema = BaseItemFieldsSchema.extend({
+export const FillBlankStructureSchema = z.object({
   /** Template text with blank markers (e.g., "The {{blank_1}} is blue") */
   templateText: RichContentSchema,
   /** Definition of each blank */
@@ -129,12 +132,14 @@ export const FillBlankAnswerSchema = z.object({
 // 6. MATCHING - Correspondência ("de ligar")
 // =============================================================================
 
+export const MatchingColumnItemSchema = z.object({
+  id: z.string(),
+  content: RichContentSchema,
+});
+
 export const MatchingColumnSchema = z.object({
   id: z.string(),
-  items: z.array(z.object({
-    id: z.string(),
-    content: RichContentSchema,
-  })),
+  items: z.array(MatchingColumnItemSchema),
 });
 
 export const MatchingConnectionSchema = z.object({
@@ -142,7 +147,7 @@ export const MatchingConnectionSchema = z.object({
   rightId: z.string(),
 });
 
-export const MatchingStructureSchema = BaseItemFieldsSchema.extend({
+export const MatchingStructureSchema = z.object({
   leftColumn: MatchingColumnSchema,
   rightColumn: MatchingColumnSchema,
   correctConnections: z.array(MatchingConnectionSchema),
@@ -173,28 +178,30 @@ export const ItemTypeSchema = z.enum([
 export type ItemType = z.infer<typeof ItemTypeSchema>;
 
 /**
- * Structure schema (what's stored in items.structure JSONB)
+ * Maps item type to its structure schema
+ * Used for validation in create/update mutations
  */
-export const ItemStructureSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("mcq_single"), ...MCQSingleStructureSchema.shape }),
-  z.object({ type: z.literal("mcq_multiple"), ...MCQMultipleStructureSchema.shape }),
-  z.object({ type: z.literal("true_false"), ...TrueFalseStructureSchema.shape }),
-  z.object({ type: z.literal("true_false_multi"), ...TrueFalseMultiStructureSchema.shape }),
-  z.object({ type: z.literal("fill_blank"), ...FillBlankStructureSchema.shape }),
-  z.object({ type: z.literal("matching"), ...MatchingStructureSchema.shape }),
-]);
+export const ItemStructureSchemas = {
+  mcq_single: MCQSingleStructureSchema,
+  mcq_multiple: MCQMultipleStructureSchema,
+  true_false: TrueFalseStructureSchema,
+  true_false_multi: TrueFalseMultiStructureSchema,
+  fill_blank: FillBlankStructureSchema,
+  matching: MatchingStructureSchema,
+} as const;
 
 /**
- * Answer schema (what's stored in responses.answer JSONB)
+ * Maps item type to its answer schema
+ * Used for validation in response submission
  */
-export const ItemAnswerSchema = z.discriminatedUnion("type", [
-  z.object({ type: z.literal("mcq_single"), ...MCQSingleAnswerSchema.shape }),
-  z.object({ type: z.literal("mcq_multiple"), ...MCQMultipleAnswerSchema.shape }),
-  z.object({ type: z.literal("true_false"), ...TrueFalseAnswerSchema.shape }),
-  z.object({ type: z.literal("true_false_multi"), ...TrueFalseMultiAnswerSchema.shape }),
-  z.object({ type: z.literal("fill_blank"), ...FillBlankAnswerSchema.shape }),
-  z.object({ type: z.literal("matching"), ...MatchingAnswerSchema.shape }),
-]);
+export const ItemAnswerSchemas = {
+  mcq_single: MCQSingleAnswerSchema,
+  mcq_multiple: MCQMultipleAnswerSchema,
+  true_false: TrueFalseAnswerSchema,
+  true_false_multi: TrueFalseMultiAnswerSchema,
+  fill_blank: FillBlankAnswerSchema,
+  matching: MatchingAnswerSchema,
+} as const;
 
 // Type exports
 export type MCQSingleStructure = z.infer<typeof MCQSingleStructureSchema>;
@@ -204,5 +211,9 @@ export type TrueFalseMultiStructure = z.infer<typeof TrueFalseMultiStructureSche
 export type FillBlankStructure = z.infer<typeof FillBlankStructureSchema>;
 export type MatchingStructure = z.infer<typeof MatchingStructureSchema>;
 
-export type ItemStructure = z.infer<typeof ItemStructureSchema>;
-export type ItemAnswer = z.infer<typeof ItemAnswerSchema>;
+export type MCQSingleAnswer = z.infer<typeof MCQSingleAnswerSchema>;
+export type MCQMultipleAnswer = z.infer<typeof MCQMultipleAnswerSchema>;
+export type TrueFalseAnswer = z.infer<typeof TrueFalseAnswerSchema>;
+export type TrueFalseMultiAnswer = z.infer<typeof TrueFalseMultiAnswerSchema>;
+export type FillBlankAnswer = z.infer<typeof FillBlankAnswerSchema>;
+export type MatchingAnswer = z.infer<typeof MatchingAnswerSchema>;

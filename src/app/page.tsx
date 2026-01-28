@@ -30,9 +30,9 @@ export default async function Home() {
           <span className="block">
             <LoginButton disabled={!authEnabled} />
           </span>
-          <span className="relative flex justify-center"><div className="w-fit bg-white px-4 z-10"><p className="opacity-50">ou</p></div><div className="border-b-2 border-black opacity-10 absolute w-full top-[50%]"></div></span>
+          <span className="relative flex justify-center"><div className="w-fit bg-background px-4 z-10"><p className="opacity-50">ou</p></div><div className="border-b-2 border-accent-foreground opacity-10 absolute w-full top-[50%]"></div></span>
           <span className="flex w-full">
-            <Button className="flex-1 font-bold sm:min-w-[185] py-3 text-[1rem]" size={null}>Crie</Button>
+            <Button className="flex-1 font-bold sm:min-w-[185] py-3 text-[1rem]" variant={"default"} size={null}>Crie</Button>
           </span>
         </menu>
         <span className="hidden w-full sm:flex">

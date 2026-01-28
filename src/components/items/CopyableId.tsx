@@ -30,24 +30,25 @@ export function CopyableId({ id, className = "" }: CopyableIdProps) {
   };
 
   return (
-    <div className={`flex items-center gap-1 group/id ${className}`}>
-      <code
-        className="text-xs text-muted-foreground font-mono truncate"
-        title={id}
-      >
-        {id.slice(0, 8)}...
-      </code>
       <button
         onClick={handleCopy}
-        className="opacity-0 group-hover/id:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded"
-        title="Copiar ID"
+        className={`flex items-center gap-1 group/id cursor-pointer ${className}`}
       >
-        {copied ? (
-          <Check className="h-3 w-3 text-green-500" />
-        ) : (
-          <Copy className="h-3 w-3 text-muted-foreground" />
-        )}
+        <code
+          className="text-xs text-muted-foreground font-mono truncate"
+          title={id}
+        >
+          {id.slice(0, 8)}...
+        </code>
+        <div
+          className="opacity-0 group-hover/id:opacity-100 transition-opacity p-0.5 hover:bg-muted rounded"
+          title="Copiar ID">
+          {copied ? (
+            <Check className="h-3 w-3 text-green-500" />
+          ) : (
+            <Copy className="h-3 w-3 text-muted-foreground" />
+          )}
+        </div>
       </button>
-    </div>
   );
 }

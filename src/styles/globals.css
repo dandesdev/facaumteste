@@ -13,106 +13,171 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+  
+  /* Usage of variables with opacity modifier support */
+  --color-background: rgb(var(--background));
+  --color-foreground: rgb(var(--foreground));
+  --color-card: rgb(var(--card));
+  --color-card-foreground: rgb(var(--card-foreground));
+  --color-popover: rgb(var(--popover));
+  --color-popover-foreground: rgb(var(--popover-foreground));
+  --color-primary: rgb(var(--primary));
+  --color-primary-foreground: rgb(var(--primary-foreground));
+  --color-secondary: rgb(var(--secondary));
+  --color-secondary-foreground: rgb(var(--secondary-foreground));
+  --color-muted: rgb(var(--muted));
+  --color-muted-foreground: rgb(var(--muted-foreground));
+  --color-accent: rgb(var(--accent));
+  --color-accent-foreground: rgb(var(--accent-foreground));
+  --color-destructive: rgb(var(--destructive));
+  --color-border: rgb(var(--border));
+  --color-input: rgb(var(--input));
+  --color-ring: rgb(var(--ring));
+  --color-chart-1: rgb(var(--chart-1));
+  --color-chart-2: rgb(var(--chart-2));
+  --color-chart-3: rgb(var(--chart-3));
+  --color-chart-4: rgb(var(--chart-4));
+  --color-chart-5: rgb(var(--chart-5));
+  --color-sidebar: rgb(var(--sidebar));
+  --color-sidebar-foreground: rgb(var(--sidebar-foreground));
+  --color-sidebar-primary: rgb(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: rgb(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: rgb(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: rgb(var(--sidebar-accent-foreground));
+  --color-sidebar-border: rgb(var(--sidebar-border));
+  --color-sidebar-ring: rgb(var(--sidebar-ring));
+  
+  /* Semantic status colors */
+  --color-success: rgb(var(--success));
+  --color-success-foreground: rgb(var(--success-foreground));
+  --color-warning: rgb(var(--warning));
+  --color-warning-foreground: rgb(var(--warning-foreground));
+  --color-info: rgb(var(--info));
+  --color-info-foreground: rgb(var(--info-foreground));
+  --color-error: rgb(var(--error));
+  --color-error-foreground: rgb(var(--error-foreground));
+  
+  /* Smart contrast-aware colors */
+  --color-brand-text: rgb(var(--brand-text));
 }
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  
+  /* DEFAULT THEME (Light) - RGB Triplets */
+  --background: 255 255 255;
+  --foreground: 10 10 10;
+  
+  --card: 255 255 255;
+  --card-foreground: 10 10 10;
+  
+  --popover: 255 255 255;
+  --popover-foreground: 10 10 10;
+  
+  --primary: 23 23 23; 
+  --primary-foreground: 250 250 250;
+  
+  --secondary: 245 245 245;
+  --secondary-foreground: 23 23 23;
+  
+  --muted: 245 245 245; 
+  --muted-foreground: 115 115 115;
+  
+  --accent: 245 245 245;
+  --accent-foreground: 23 23 23;
+  
+  --destructive: 239 68 68;
+  --destructive-foreground: 250 250 250;
+  
+  --border: 229 229 229;
+  --input: 229 229 229;
+  --ring: 10 10 10;
+  
+  --chart-1: 249 115 22;
+  --chart-2: 14 165 233;
+  --chart-3: 34 197 94;
+  --chart-4: 234 179 8;
+  --chart-5: 239 68 68;
+
+  --sidebar: 249 250 251;
+  --sidebar-foreground: 10 10 10;
+  --sidebar-primary: 24 24 27;
+  --sidebar-primary-foreground: 250 250 250;
+  --sidebar-accent: 244 244 245;
+  --sidebar-accent-foreground: 24 24 27;
+  --sidebar-border: 229 231 235;
+  --sidebar-ring: 59 130 246;
+  
+  /* Semantic status colors - Light mode (darker for visibility on light bg) */
+  --success: 22 163 74;           /* green-600 */
+  --success-foreground: 255 255 255;
+  --warning: 217 119 6;           /* amber-600 */
+  --warning-foreground: 255 255 255;
+  --info: 37 99 235;              /* blue-600 */
+  --info-foreground: 255 255 255;
+  --error: 220 38 38;             /* red-600 */
+  --error-foreground: 255 255 255;
+  
+  /* Smart contrast-aware text (default: use primary which is dark in light mode) */
+  --brand-text: 23 23 23;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: 10 10 10;
+  --foreground: 250 250 250;
+  
+  --card: 10 10 10;
+  --card-foreground: 250 250 250;
+  
+  --popover: 10 10 10;
+  --popover-foreground: 250 250 250;
+  
+  --primary: 250 250 250;
+  --primary-foreground: 23 23 23;
+  
+  --secondary: 38 38 38;
+  --secondary-foreground: 250 250 250;
+  
+  --muted: 38 38 38;
+  --muted-foreground: 163 163 163;
+  
+  --accent: 38 38 38;
+  --accent-foreground: 250 250 250;
+  
+  --destructive: 127 29 29;
+  --destructive-foreground: 250 250 250;
+  
+  --border: 38 38 38;
+  --input: 38 38 38;
+  --ring: 212 212 212;
+  
+  --chart-1: 34 197 94;
+  --chart-2: 46 147 250;
+  --chart-3: 249 115 22;
+  --chart-4: 168 85 247;
+  --chart-5: 236 72 153;
+
+  --sidebar: 24 24 27;
+  --sidebar-foreground: 244 244 245;
+  --sidebar-primary: 59 130 246;
+  --sidebar-primary-foreground: 255 255 255;
+  --sidebar-accent: 39 39 42;
+  --sidebar-accent-foreground: 244 244 245;
+  --sidebar-border: 44 46 51;
+  --sidebar-ring: 59 130 246;
+  
+  /* Semantic status colors - Dark mode (brighter for visibility on dark bg) */
+  --success: 74 222 128;          /* green-400 */
+  --success-foreground: 0 0 0;    /* dark text on bright green */
+  --warning: 251 191 36;          /* amber-400 */
+  --warning-foreground: 0 0 0;
+  --info: 96 165 250;             /* blue-400 */
+  --info-foreground: 0 0 0;
+  --error: 248 113 113;           /* red-400 */
+  --error-foreground: 0 0 0;
+  
+  /* Smart contrast-aware text (default: use primary which is light in dark mode) */
+  --brand-text: 250 250 250;
 }
 
 @layer base {
@@ -126,8 +191,7 @@
 
 /* ===========================================
    LEXICAL EDITOR STYLES
-   Using plain CSS because @apply outside @layer 
-   doesn't work properly in Tailwind v4
+   (Preserved as is)
    =========================================== */
 
 /* Root editor container */
@@ -141,7 +205,7 @@
   position: absolute;
   left: 0.75rem;
   top: 0.75rem;
-  color: var(--muted-foreground);
+  color: rgb(var(--muted-foreground)); /* updated to var usage */
   pointer-events: none;
   user-select: none;
 }
@@ -175,7 +239,7 @@
 }
 
 .lexical-text-code {
-  background-color: var(--muted);
+  background-color: rgb(var(--muted)); /* updated */
   padding: 0.125rem 0.375rem;
   border-radius: 0.25rem;
   font-family: ui-monospace, monospace;
@@ -203,6 +267,7 @@
   line-height: 2rem !important;
   font-weight: 700 !important;
   margin-bottom: 0.75rem !important;
+  color: rgb(var(--foreground));
 }
 
 .lexical-heading-h3 {
@@ -259,7 +324,7 @@
 
 /* Links */
 .lexical-link {
-  color: var(--primary);
+  color: rgb(var(--primary)); /* updated */
   text-decoration: underline;
   cursor: pointer;
 }
@@ -269,7 +334,7 @@
 
 /* Quotes */
 .lexical-quote {
-  border-left: 4px solid var(--muted-foreground);
+  border-left: 4px solid rgb(var(--muted-foreground)); /* updated */
   padding-left: 1rem;
   font-style: italic;
   margin: 1rem 0;
@@ -277,7 +342,7 @@
 
 /* Code blocks */
 .lexical-code-block {
-  background-color: var(--muted);
+  background-color: rgb(var(--muted)); /* updated */
   padding: 1rem;
   border-radius: 0.375rem;
   font-family: ui-monospace, monospace;
@@ -286,13 +351,13 @@
   margin: 1rem 0;
 }
 
-/* SIGN IN WITH GOOGLE */
+/* SIGN IN WITH GOOGLE styles (kept as is) */
 .gsi-material-button {
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
   -webkit-appearance: none;
-  background-color: WHITE;
+  background-color: white;
   background-image: none;
   border: 1px solid #747775;
   -webkit-border-radius: 4px;
@@ -361,32 +426,32 @@
   top: 0;
 }
 
-.gsi-material-button:disabled {
+:disabled .gsi-material-button {
   cursor: default;
   background-color: #ffffff61;
   border-color: #1f1f1f1f;
 }
 
-.gsi-material-button:disabled .gsi-material-button-contents {
+:disabled .gsi-material-button-contents {
   opacity: 38%;
 }
 
-.gsi-material-button:disabled .gsi-material-button-icon {
+:disabled .gsi-material-button-icon {
   opacity: 38%;
 }
 
-.gsi-material-button:not(:disabled):active .gsi-material-button-state, 
-.gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+:not(:disabled):active .gsi-material-button-state, 
+:not(:disabled):focus .gsi-material-button-state {
   background-color: #303030;
   opacity: 12%;
 }
 
-.gsi-material-button:not(:disabled):hover {
+:not(:disabled):hover .gsi-material-button {
   -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
   box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
 }
 
-.gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+:not(:disabled):hover .gsi-material-button-state {
   background-color: #303030;
   opacity: 8%;
 }

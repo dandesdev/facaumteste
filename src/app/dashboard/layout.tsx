@@ -8,6 +8,8 @@ import LogoutButton from "~/components/LogoutButton";
 import { SpaceSwitcher } from "~/components/SpaceSwitcher";
 import { SpaceProvider } from "~/contexts/SpaceContext";
 import { SidebarNav } from "~/components/nav";
+import { SpaceThemeProvider } from "~/components/theme/SpaceThemeProvider";
+import { ThemeToggle } from "~/components/theme/ThemeToggle";
 import {
   Sidebar,
   SidebarContent,
@@ -54,6 +56,7 @@ export default async function DashboardLayout({
   // Fetch details about the space
   let spaceName = "Meu Espaço";
   let isPersonal = true;
+  let spaceTheme: { primary?: string; secondary?: string; accent?: string; radius?: number } | undefined;
 
   if (activeSpace.kind === "organization") {
     const org = await db.query.organizations.findFirst({
@@ -62,6 +65,7 @@ export default async function DashboardLayout({
     if (org) {
       spaceName = org.name;
       isPersonal = false;
+      spaceTheme = org.settings?.theme;
     } else {
       redirect("/select-space");
     }
@@ -72,6 +76,7 @@ export default async function DashboardLayout({
     if (group) {
       spaceName = group.name;
       isPersonal = false;
+      spaceTheme = group.settings?.theme;
     } else {
       redirect("/select-space");
     }
@@ -81,8 +86,15 @@ export default async function DashboardLayout({
     });
     if (user) {
       spaceName = user.name ?? "Meu Espaço";
+      spaceTheme = user.settings?.theme;
     }
   }
+
+  // Fetch current user's preferred color mode
+  const currentUser = await db.query.users.findFirst({
+    where: eq(users.id, data.user.id),
+  });
+  const preferredMode = currentUser?.settings?.preferredMode ?? "system";
 
   // Fetch groups for the SpaceSwitcher
   const userGroups = await db
@@ -103,8 +115,9 @@ export default async function DashboardLayout({
   ];
 
   return (
-    <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName }}>
-      <SidebarProvider>
+    <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName, theme: spaceTheme }}>
+      <SpaceThemeProvider>
+        <SidebarProvider resizable={true}>
         <Sidebar collapsible="icon">
           <SidebarHeader>
             <SpaceSwitcher
@@ -128,8 +141,8 @@ export default async function DashboardLayout({
 
           <SidebarFooter>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <LogoutButton />
+              <SidebarMenuItem className="flex items-center justify-between py-2">
+                <ThemeToggle initialMode={preferredMode} />
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarFooter>
@@ -141,12 +154,14 @@ export default async function DashboardLayout({
           <header className="flex h-14 items-center gap-4 border-b px-6 lg:h-[60px]">
             <SidebarTrigger className="-ml-2" />
             <div className="flex-1" />
+            <LogoutButton variant="quiet" />
           </header>
           <div className="container mx-auto p-6">
             {children}
           </div>
         </SidebarInset>
-      </SidebarProvider>
+        </SidebarProvider>
+      </SpaceThemeProvider>
     </SpaceProvider>
   );
 }

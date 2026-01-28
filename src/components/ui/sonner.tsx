@@ -26,10 +26,24 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
+          // Base toast styling
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",
           "--border-radius": "var(--radius)",
+          // Semantic status colors (mode-adaptive)
+          "--success-bg": "rgb(var(--success))",
+          "--success-text": "rgb(var(--success-foreground))",
+          "--success-border": "rgb(var(--success) / 0.3)",
+          "--warning-bg": "rgb(var(--warning))",
+          "--warning-text": "rgb(var(--warning-foreground))",
+          "--warning-border": "rgb(var(--warning) / 0.3)",
+          "--info-bg": "rgb(var(--info))",
+          "--info-text": "rgb(var(--info-foreground))",
+          "--info-border": "rgb(var(--info) / 0.3)",
+          "--error-bg": "rgb(var(--error))",
+          "--error-text": "rgb(var(--error-foreground))",
+          "--error-border": "rgb(var(--error) / 0.3)",
         } as React.CSSProperties
       }
       {...props}

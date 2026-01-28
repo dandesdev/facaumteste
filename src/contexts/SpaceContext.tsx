@@ -11,6 +11,12 @@ export interface ActiveSpace {
   kind: "organization" | "user" | "group";
   id: string;
   name: string;
+  theme?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;     
+    radius?: number;
+  };
 }
 
 interface SpaceContextValue {

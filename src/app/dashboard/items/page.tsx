@@ -446,7 +446,7 @@ export default function ItemsPage() {
       </div>
 
       {/* Selection actions bar - fixed height to prevent layout shift */}
-      <div className="flex items-center gap-3 px-3 bg-muted/50 rounded-md h-11">
+      <div className="flex items-center gap-3 px-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

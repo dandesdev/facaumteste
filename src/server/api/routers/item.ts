@@ -6,8 +6,13 @@ import {
     items,
     organizationMembers,
 } from "~/server/db/schema";
-import { RichContentSchema } from "~/lib/schemas/lexical";
 import { eq, and, desc, isNull, or, ilike, sql, count } from "drizzle-orm";
+import {
+    RichContentSchema,
+    OptionalRichContentSchema,
+    ItemTypeSchema,
+    ItemStructureSchemas,
+} from "~/lib/schemas";
 
 export const itemRouter = createTRPCRouter({
     /**
@@ -88,7 +93,7 @@ export const itemRouter = createTRPCRouter({
             }
 
             // Search filter - search in ID or statement text
-            if (input.search && input.search.trim()) {
+            if (input.search?.trim()) {
                 const searchTerm = `%${input.search.trim()}%`;
                 conditions.push(
                     or(
@@ -205,7 +210,7 @@ export const itemRouter = createTRPCRouter({
 
             const allTags = new Set<string>();
             for (const item of itemsWithTags) {
-                const tags = item.tags as string[] | null;
+                const tags = item.tags;
                 if (tags) {
                     for (const tag of tags) {
                         if (!input.search || tag.toLowerCase().includes(input.search.toLowerCase())) {
@@ -266,24 +271,29 @@ export const itemRouter = createTRPCRouter({
     create: protectedProcedure
         .input(
             z.object({
-                type: z.enum([
-                    "mcq_single",
-                    "mcq_multiple",
-                    "true_false",
-                    "true_false_multi",
-                    "fill_blank",
-                    "matching",
-                ]),
+                type: ItemTypeSchema,
                 difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
                 organizationId: z.string().uuid().optional(),
 
-                // JSONB fields - accepting generic objects/any for now
-                // JSONB fields - validated against Lexical schema
+                // Rich text content validated with relaxed Lexical schema
                 statement: RichContentSchema,
-                structure: RichContentSchema,
-                resolution: RichContentSchema.optional(), // Correct answer/explanation
+                // Structure is type-specific - validated via superRefine below
+                structure: z.record(z.string(), z.unknown()),
+                resolution: OptionalRichContentSchema,
                 tags: z.array(z.string()).default([]),
                 status: z.enum(["draft", "published"]).default("draft"),
+            }).superRefine((data, ctx) => {
+                // Validate structure against type-specific schema
+                const structureSchema = ItemStructureSchemas[data.type];
+                const result = structureSchema.safeParse(data.structure);
+                if (!result.success) {
+                    result.error.issues.forEach((issue) => {
+                        ctx.addIssue({
+                            ...issue,
+                            path: ["structure", ...issue.path],
+                        });
+                    });
+                }
             })
         )
         .mutation(async ({ ctx, input }) => {
@@ -330,9 +340,11 @@ export const itemRouter = createTRPCRouter({
         .input(
             z.object({
                 id: z.string().uuid(),
+                // Rich text content validated with relaxed Lexical schema
                 statement: RichContentSchema.optional(),
-                structure: RichContentSchema.optional(),
-                resolution: RichContentSchema.optional(),
+                // Structure validated separately when item type is known
+                structure: z.record(z.string(), z.unknown()).optional(),
+                resolution: OptionalRichContentSchema,
                 difficulty: z.enum(["easy", "medium", "hard"]).optional(),
                 tags: z.array(z.string()).optional(),
                 status: z.enum(["draft", "published", "archived"]).optional(),

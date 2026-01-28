@@ -2,6 +2,7 @@ import { organizationRouter } from "~/server/api/routers/organization";
 import { evaluationRouter } from "~/server/api/routers/evaluation";
 import { itemRouter } from "~/server/api/routers/item";
 import { attemptRouter } from "~/server/api/routers/attempt";
+import { userRouter } from "~/server/api/routers/user";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -14,6 +15,7 @@ export const appRouter = createTRPCRouter({
   evaluation: evaluationRouter,
   item: itemRouter,
   attempt: attemptRouter,
+  user: userRouter,
 });
 
 // export type definition of API

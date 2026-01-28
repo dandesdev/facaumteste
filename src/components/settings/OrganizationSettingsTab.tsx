@@ -2,6 +2,7 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { z } from "zod";
 import { Button } from "~/components/ui/button";
 import {
@@ -17,7 +18,6 @@ import { Input } from "~/components/ui/input";
 import { Separator } from "~/components/ui/separator";
 import { toast } from "sonner";
 import { api } from "~/trpc/react";
-import { useSpace } from "~/contexts/SpaceContext";
 import { useEffect } from "react";
 
 const orgSettingsSchema = z.object({
@@ -27,33 +27,35 @@ const orgSettingsSchema = z.object({
 
 type OrgSettingsValues = z.infer<typeof orgSettingsSchema>;
 
-export default function OrganizationSettingsPage() {
-  const { activeSpace } = useSpace();
+interface OrganizationSettingsTabProps {
+  organizationId: string;
+}
+
+export function OrganizationSettingsTab({ organizationId }: OrganizationSettingsTabProps) {
   const utils = api.useUtils();
+  const router = useRouter();
 
-  // Ensure we are in an organization context
-  if (activeSpace.kind !== "organization") {
-    return <div>Este painel é apenas para organizações.</div>;
-  }
-
-  const { data: org, isLoading } = api.organization.getById.useQuery(
-    { id: activeSpace.id ?? "" },
+  const { data: org, isLoading, error } = api.organization.getById.useQuery(
+    { id: organizationId ?? "" },
     { 
-      enabled: !!activeSpace.id,
-      retry: false
+      enabled: !!organizationId && organizationId.length > 0,
+      retry: false 
     }
   );
 
   const updateMutation = api.organization.update.useMutation({
     onSuccess: () => {
       toast.success("Configurações atualizadas com sucesso!");
-      utils.organization.getById.invalidate({ id: activeSpace.id });
+      utils.organization.getById.invalidate({ id: organizationId });
+      // Refresh server components (like DashboardLayout) to update the sidebar
+      router.refresh();
     },
     onError: (error) => {
       toast.error("Erro ao atualizar: " + error.message);
     },
   });
 
+  // ALL hooks must be called before any early returns
   const form = useForm<OrgSettingsValues>({
     resolver: zodResolver(orgSettingsSchema),
     defaultValues: {
@@ -62,7 +64,6 @@ export default function OrganizationSettingsPage() {
     },
   });
 
-  // Update form when data loads
   useEffect(() => {
     if (org) {
       form.reset({
@@ -80,6 +81,22 @@ export default function OrganizationSettingsPage() {
       name: data.name,
       slug: data.slug,
     });
+  }
+
+  // Early returns AFTER all hooks
+  if (error) {
+    console.error("OrganizationSettingsTab Error:", error);
+    return (
+      <div className="p-4 border border-destructive/50 rounded-md bg-destructive/10 text-destructive">
+        <p className="font-semibold">Erro ao carregar organização</p>
+        <p className="text-sm">{error.message || "Erro desconhecido"}</p>
+        <p className="text-xs text-muted-foreground mt-2">ID: {organizationId}</p>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <div className="animate-pulse">Carregando...</div>;
   }
 
   return (
@@ -125,7 +142,9 @@ export default function OrganizationSettingsPage() {
               </FormItem>
             )}
           />
-          <Button type="submit">Atualizar configurações</Button>
+          <Button type="submit" disabled={updateMutation.isPending}>
+            {updateMutation.isPending ? "Salvando..." : "Atualizar configurações"}
+          </Button>
         </form>
       </Form>
     </div>
