@@ -2,10 +2,10 @@
 
 /**
  * Lexical Rich Text Editor Component
- * 
+ *
  * TEACHING NOTE:
  * This is the main editor component. Here's how it works:
- * 
+ *
  * 1. LexicalComposer provides the editor context (like React.Context)
  * 2. RichTextPlugin adds the ContentEditable and handles rich text
  * 3. HistoryPlugin adds undo/redo support
@@ -13,7 +13,7 @@
  * 5. LinkPlugin enables clickable links
  * 6. Our ToolbarPlugin adds the formatting buttons
  * 7. Our OnChangePlugin saves content when it changes
- * 
+ *
  * The initialConfig sets up:
  * - namespace: unique ID for this editor instance
  * - theme: CSS class mappings (see theme.ts)
@@ -32,11 +32,16 @@ import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
 import { ListItemNode, ListNode } from "@lexical/list";
 import { LinkNode } from "@lexical/link";
 import { HeadingNode, QuoteNode } from "@lexical/rich-text";
+import "katex/dist/katex.min.css";
 import type { EditorState, SerializedEditorState } from "lexical";
 
 import { editorTheme } from "./theme";
 import { ToolbarPlugin } from "./plugins/ToolbarPlugin";
 import { OnChangePlugin } from "./plugins/OnChangePlugin";
+import { EquationPlugin } from "./plugins/EquationPlugin";
+import { EquationNode } from "./nodes/EquationNode";
+import { ImagePlugin } from "./plugins/ImagePlugin";
+import { ImageNode } from "./nodes/ImageNode";
 
 interface LexicalEditorProps {
   /** Initial content as serialized JSON */
@@ -58,7 +63,6 @@ export function LexicalEditor({
   editable = true,
   className = "",
 }: LexicalEditorProps) {
-  
   // Handle editor state changes
   const handleChange = (editorState: EditorState) => {
     if (onChange) {
@@ -97,15 +101,19 @@ export function LexicalEditor({
       ListNode,
       ListItemNode,
       LinkNode,
+      EquationNode,
+      ImageNode,
     ],
   };
 
   return (
-    <div className={`border rounded-md bg-background overflow-hidden ${className}`}>
+    <div
+      className={`bg-background overflow-hidden rounded-md border ${className}`}
+    >
       <LexicalComposer initialConfig={initialConfig}>
         {/* Toolbar with formatting buttons */}
         <ToolbarPlugin />
-        
+
         {/* Main editor area */}
         <div className="relative">
           <RichTextPlugin
@@ -118,11 +126,13 @@ export function LexicalEditor({
             ErrorBoundary={LexicalErrorBoundary}
           />
         </div>
-        
+
         {/* Plugins that add functionality */}
         <HistoryPlugin />
         <ListPlugin />
         <LinkPlugin />
+        <EquationPlugin />
+        <ImagePlugin />
         <OnChangePlugin onChange={handleChange} />
       </LexicalComposer>
     </div>

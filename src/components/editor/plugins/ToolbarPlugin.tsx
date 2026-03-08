@@ -2,24 +2,24 @@
 
 /**
  * Toolbar Plugin for Lexical Editor
- * 
+ *
  * TEACHING NOTE:
  * This plugin adds a formatting toolbar. Plugins in Lexical are just React
  * components that access the editor via useLexicalComposerContext().
- * 
+ *
  * To modify the editor, we dispatch COMMANDS. Commands are actions like
  * FORMAT_TEXT_COMMAND (bold, italic) or INSERT_ORDERED_LIST_COMMAND.
- * 
+ *
  * For HEADINGS: We use $setBlocksType to convert paragraphs to headings.
  * For ALIGNMENT: We use FORMAT_ELEMENT_COMMAND with "left", "center", "right", "justify".
- * 
+ *
  * IMPORTANT: When using dropdowns, we need to ensure the editor maintains focus
  * after the dropdown closes. We do this by calling editor.focus() after updates.
  */
 
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
-import { 
-  $getSelection, 
+import {
+  $getSelection,
   $isRangeSelection,
   FORMAT_TEXT_COMMAND,
   FORMAT_ELEMENT_COMMAND,
@@ -36,12 +36,12 @@ import { $createHeadingNode } from "@lexical/rich-text";
 import type { HeadingTagType } from "@lexical/rich-text";
 import { useCallback, useEffect, useState } from "react";
 import { mergeRegister } from "@lexical/utils";
-import { 
-  Bold, 
-  Italic, 
-  Underline, 
-  Strikethrough, 
-  List, 
+import {
+  Bold,
+  Italic,
+  Underline,
+  Strikethrough,
+  List,
   ListOrdered,
   Undo,
   Redo,
@@ -53,7 +53,12 @@ import {
   Heading2,
   Heading3,
   Type,
+  Sigma,
+  Radical,
+  ImagePlus,
 } from "lucide-react";
+import { INSERT_EQUATION_COMMAND } from "./EquationPlugin";
+import { openImageFilePicker } from "./ImagePlugin";
 import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import {
@@ -65,7 +70,22 @@ import {
 
 export function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext();
-  
+
+  // Equation insertion
+  const insertInlineEquation = () => {
+    editor.dispatchCommand(INSERT_EQUATION_COMMAND, {
+      equation: "",
+      inline: true,
+    });
+  };
+
+  const insertBlockEquation = () => {
+    editor.dispatchCommand(INSERT_EQUATION_COMMAND, {
+      equation: "",
+      inline: false,
+    });
+  };
+
   // Track which formats are active at cursor position
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
@@ -91,7 +111,7 @@ export function ToolbarPlugin() {
         editorState.read(() => {
           updateToolbar();
         });
-      })
+      }),
     );
   }, [editor, updateToolbar]);
 
@@ -154,7 +174,7 @@ export function ToolbarPlugin() {
   };
 
   return (
-    <div className="flex items-center gap-1 p-2 border-b bg-muted/30 flex-wrap">
+    <div className="bg-muted/30 flex flex-wrap items-center gap-1 border-b p-2">
       {/* Undo/Redo */}
       <Button
         type="button"
@@ -176,17 +196,17 @@ export function ToolbarPlugin() {
       >
         <Redo className="h-4 w-4" />
       </Button>
-      
+
       <Separator orientation="vertical" className="mx-1 h-6" />
-      
+
       {/* Block type (headings) */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button 
-            type="button" 
-            variant="ghost" 
-            size="sm" 
-            className="h-8 gap-1 px-2" 
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1 px-2"
             title="Tipo de bloco"
           >
             <Type className="h-4 w-4" />
@@ -194,26 +214,26 @@ export function ToolbarPlugin() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start">
           <DropdownMenuItem onSelect={() => formatParagraph()}>
-            <Type className="h-4 w-4 mr-2" />
+            <Type className="mr-2 h-4 w-4" />
             Parágrafo
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => formatHeading("h1")}>
-            <Heading1 className="h-4 w-4 mr-2" />
+            <Heading1 className="mr-2 h-4 w-4" />
             Título 1
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => formatHeading("h2")}>
-            <Heading2 className="h-4 w-4 mr-2" />
+            <Heading2 className="mr-2 h-4 w-4" />
             Título 2
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => formatHeading("h3")}>
-            <Heading3 className="h-4 w-4 mr-2" />
+            <Heading3 className="mr-2 h-4 w-4" />
             Título 3
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      
+
       <Separator orientation="vertical" className="mx-1 h-6" />
-      
+
       {/* Text formatting */}
       <Button
         type="button"
@@ -255,9 +275,9 @@ export function ToolbarPlugin() {
       >
         <Strikethrough className="h-4 w-4" />
       </Button>
-      
+
       <Separator orientation="vertical" className="mx-1 h-6" />
-      
+
       {/* Alignment */}
       <Button
         type="button"
@@ -299,9 +319,9 @@ export function ToolbarPlugin() {
       >
         <AlignJustify className="h-4 w-4" />
       </Button>
-      
+
       <Separator orientation="vertical" className="mx-1 h-6" />
-      
+
       {/* Lists */}
       <Button
         type="button"
@@ -322,6 +342,44 @@ export function ToolbarPlugin() {
         title="Lista numerada"
       >
         <ListOrdered className="h-4 w-4" />
+      </Button>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      {/* Equations */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={insertInlineEquation}
+        className="h-8 w-8 p-0"
+        title="Equação inline (Ctrl+Shift+E)"
+      >
+        <Sigma className="h-4 w-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={insertBlockEquation}
+        className="h-8 w-8 p-0"
+        title="Equação em bloco"
+      >
+        <Radical className="h-4 w-4" />
+      </Button>
+
+      <Separator orientation="vertical" className="mx-1 h-6" />
+
+      {/* Image */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        onClick={() => openImageFilePicker(editor)}
+        className="h-8 w-8 p-0"
+        title="Inserir imagem"
+      >
+        <ImagePlus className="h-4 w-4" />
       </Button>
     </div>
   );

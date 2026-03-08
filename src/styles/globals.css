@@ -4,7 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
+  --font-sans:
+    var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
@@ -13,7 +14,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  
+
   /* Usage of variables with opacity modifier support */
   --color-background: rgb(var(--background));
   --color-foreground: rgb(var(--foreground));
@@ -46,7 +47,7 @@
   --color-sidebar-accent-foreground: rgb(var(--sidebar-accent-foreground));
   --color-sidebar-border: rgb(var(--sidebar-border));
   --color-sidebar-ring: rgb(var(--sidebar-ring));
-  
+
   /* Semantic status colors */
   --color-success: rgb(var(--success));
   --color-success-foreground: rgb(var(--success-foreground));
@@ -56,43 +57,43 @@
   --color-info-foreground: rgb(var(--info-foreground));
   --color-error: rgb(var(--error));
   --color-error-foreground: rgb(var(--error-foreground));
-  
+
   /* Smart contrast-aware colors */
   --color-brand-text: rgb(var(--brand-text));
 }
 
 :root {
   --radius: 0.625rem;
-  
+
   /* DEFAULT THEME (Light) - RGB Triplets */
   --background: 255 255 255;
   --foreground: 10 10 10;
-  
+
   --card: 255 255 255;
   --card-foreground: 10 10 10;
-  
+
   --popover: 255 255 255;
   --popover-foreground: 10 10 10;
-  
-  --primary: 23 23 23; 
+
+  --primary: 23 23 23;
   --primary-foreground: 250 250 250;
-  
+
   --secondary: 245 245 245;
   --secondary-foreground: 23 23 23;
-  
-  --muted: 245 245 245; 
+
+  --muted: 245 245 245;
   --muted-foreground: 115 115 115;
-  
+
   --accent: 245 245 245;
   --accent-foreground: 23 23 23;
-  
+
   --destructive: 239 68 68;
   --destructive-foreground: 250 250 250;
-  
+
   --border: 229 229 229;
   --input: 229 229 229;
   --ring: 10 10 10;
-  
+
   --chart-1: 249 115 22;
   --chart-2: 14 165 233;
   --chart-3: 34 197 94;
@@ -107,17 +108,17 @@
   --sidebar-accent-foreground: 24 24 27;
   --sidebar-border: 229 231 235;
   --sidebar-ring: 59 130 246;
-  
+
   /* Semantic status colors - Light mode (darker for visibility on light bg) */
-  --success: 22 163 74;           /* green-600 */
+  --success: 22 163 74; /* green-600 */
   --success-foreground: 255 255 255;
-  --warning: 217 119 6;           /* amber-600 */
+  --warning: 217 119 6; /* amber-600 */
   --warning-foreground: 255 255 255;
-  --info: 37 99 235;              /* blue-600 */
+  --info: 37 99 235; /* blue-600 */
   --info-foreground: 255 255 255;
-  --error: 220 38 38;             /* red-600 */
+  --error: 220 38 38; /* red-600 */
   --error-foreground: 255 255 255;
-  
+
   /* Smart contrast-aware text (default: use primary which is dark in light mode) */
   --brand-text: 23 23 23;
 }
@@ -125,32 +126,32 @@
 .dark {
   --background: 10 10 10;
   --foreground: 250 250 250;
-  
+
   --card: 10 10 10;
   --card-foreground: 250 250 250;
-  
+
   --popover: 10 10 10;
   --popover-foreground: 250 250 250;
-  
+
   --primary: 250 250 250;
   --primary-foreground: 23 23 23;
-  
+
   --secondary: 38 38 38;
   --secondary-foreground: 250 250 250;
-  
+
   --muted: 38 38 38;
   --muted-foreground: 163 163 163;
-  
+
   --accent: 38 38 38;
   --accent-foreground: 250 250 250;
-  
+
   --destructive: 127 29 29;
   --destructive-foreground: 250 250 250;
-  
+
   --border: 38 38 38;
   --input: 38 38 38;
   --ring: 212 212 212;
-  
+
   --chart-1: 34 197 94;
   --chart-2: 46 147 250;
   --chart-3: 249 115 22;
@@ -165,17 +166,17 @@
   --sidebar-accent-foreground: 244 244 245;
   --sidebar-border: 44 46 51;
   --sidebar-ring: 59 130 246;
-  
+
   /* Semantic status colors - Dark mode (brighter for visibility on dark bg) */
-  --success: 74 222 128;          /* green-400 */
-  --success-foreground: 0 0 0;    /* dark text on bright green */
-  --warning: 251 191 36;          /* amber-400 */
+  --success: 74 222 128; /* green-400 */
+  --success-foreground: 0 0 0; /* dark text on bright green */
+  --warning: 251 191 36; /* amber-400 */
   --warning-foreground: 0 0 0;
-  --info: 96 165 250;             /* blue-400 */
+  --info: 96 165 250; /* blue-400 */
   --info-foreground: 0 0 0;
-  --error: 248 113 113;           /* red-400 */
+  --error: 248 113 113; /* red-400 */
   --error-foreground: 0 0 0;
-  
+
   /* Smart contrast-aware text (default: use primary which is light in dark mode) */
   --brand-text: 250 250 250;
 }
@@ -351,7 +352,220 @@
   margin: 1rem 0;
 }
 
-/* SIGN IN WITH GOOGLE styles (kept as is) */
+/* ===========================================
+   EQUATION / LATEX STYLES
+   =========================================== */
+
+/* Inline equation wrapper (from EquationNode.createDOM) */
+.editor-equation-inline {
+  display: inline;
+  position: relative;
+}
+
+/* Block equation wrapper */
+.editor-equation-block {
+  display: block;
+  text-align: center;
+  margin: 1rem 0;
+  position: relative;
+}
+
+/* --- Display mode (rendered KaTeX) --- */
+
+.editor-equation-display {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  border-radius: 0.25rem;
+}
+
+.editor-equation-display.inline {
+  display: inline;
+  padding: 0.125rem 0.25rem;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.editor-equation-display.block {
+  display: block;
+  padding: 0.75rem;
+  overflow-x: auto;
+}
+
+.editor-equation-display:hover {
+  background-color: rgb(var(--accent));
+}
+
+.editor-equation-display.selected {
+  background-color: rgb(var(--accent));
+  outline: 2px solid rgb(var(--ring));
+  outline-offset: 1px;
+}
+
+/* --- Edit mode containers --- */
+
+.editor-equation-editing.inline {
+  display: inline;
+  position: relative;
+}
+
+.editor-equation-editing.block {
+  display: block;
+  margin: 0.5rem 0;
+}
+
+/* Hidden span used to measure inline input text width for auto-grow */
+.editor-equation-measure {
+  position: absolute;
+  visibility: hidden;
+  height: 0;
+  overflow: hidden;
+  white-space: pre;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.875rem;
+  padding: 0 0.5rem;
+}
+
+/* --- Inline equation input (auto-grows) --- */
+
+.editor-equation-input {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.875rem;
+  padding: 0.125rem 0.375rem;
+  border: 1.5px solid rgb(var(--ring));
+  border-radius: 0.25rem;
+  background-color: rgb(var(--muted));
+  color: rgb(var(--foreground));
+  outline: none;
+  min-width: 4rem;
+  max-width: 100%;
+  vertical-align: baseline;
+  transition: width 0.1s ease;
+}
+
+.editor-equation-input:focus {
+  border-color: rgb(var(--primary));
+  box-shadow: 0 0 0 1px rgb(var(--primary) / 0.2);
+}
+
+/* --- Block equation edit area --- */
+
+.editor-equation-block-edit {
+  border: 1.5px solid rgb(var(--border));
+  border-radius: 0.5rem;
+  background-color: rgb(var(--muted));
+  overflow: hidden;
+  text-align: left;
+}
+
+/* Header row with hint + delete button */
+.editor-equation-block-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.375rem 0.75rem;
+  border-bottom: 1px solid rgb(var(--border));
+}
+
+.editor-equation-block-edit-hint {
+  font-size: 0.7rem;
+  color: rgb(var(--muted-foreground));
+  letter-spacing: 0.01em;
+}
+
+.editor-equation-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  border: none;
+  background: transparent;
+  color: rgb(var(--muted-foreground));
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.editor-equation-delete-btn:hover {
+  color: rgb(var(--destructive));
+  background-color: rgb(var(--destructive) / 0.1);
+}
+
+.editor-equation-textarea {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  width: 100%;
+  border: none;
+  background-color: transparent;
+  color: rgb(var(--foreground));
+  outline: none;
+  resize: vertical;
+  min-height: 3rem;
+}
+
+/* Live preview under block equation textarea */
+.editor-equation-preview {
+  border-top: 1px solid rgb(var(--border));
+  padding: 0.75rem;
+  text-align: center;
+}
+
+.editor-equation-preview-label {
+  display: block;
+  font-size: 0.7rem;
+  color: rgb(var(--muted-foreground));
+  margin-bottom: 0.375rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.editor-equation-preview-content {
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-x: auto;
+}
+
+/* ===========================================
+   IMAGE STYLES
+   =========================================== */
+
+.editor-image-wrapper {
+  display: block;
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.editor-image {
+  display: inline-block;
+  position: relative;
+  max-width: 100%;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: outline 0.15s ease;
+}
+
+.editor-image.selected {
+  outline: 2px solid rgb(var(--ring));
+  outline-offset: 2px;
+}
+
+.editor-image-element {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.375rem;
+}
+
 .gsi-material-button {
   -moz-user-select: none;
   -webkit-user-select: none;
@@ -366,7 +580,7 @@
   box-sizing: border-box;
   color: #1f1f1f;
   cursor: pointer;
-  font-family: 'Roboto', arial, sans-serif;
+  font-family: "Roboto", arial, sans-serif;
   font-size: 14px;
   height: 40px;
   letter-spacing: 0.25px;
@@ -375,8 +589,14 @@
   padding: 0 12px;
   position: relative;
   text-align: center;
-  -webkit-transition: background-color .218s, border-color .218s, box-shadow .218s;
-  transition: background-color .218s, border-color .218s, box-shadow .218s;
+  -webkit-transition:
+    background-color 0.218s,
+    border-color 0.218s,
+    box-shadow 0.218s;
+  transition:
+    background-color 0.218s,
+    border-color 0.218s,
+    box-shadow 0.218s;
   vertical-align: middle;
   white-space: nowrap;
   width: auto;
@@ -408,7 +628,7 @@
 .gsi-material-button .gsi-material-button-contents {
   -webkit-flex-grow: 1;
   flex-grow: 1;
-  font-family: 'Roboto', arial, sans-serif;
+  font-family: "Roboto", arial, sans-serif;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -416,8 +636,8 @@
 }
 
 .gsi-material-button .gsi-material-button-state {
-  -webkit-transition: opacity .218s;
-  transition: opacity .218s;
+  -webkit-transition: opacity 0.218s;
+  transition: opacity 0.218s;
   bottom: 0;
   left: 0;
   opacity: 0;
@@ -440,15 +660,19 @@
   opacity: 38%;
 }
 
-:not(:disabled):active .gsi-material-button-state, 
+:not(:disabled):active .gsi-material-button-state,
 :not(:disabled):focus .gsi-material-button-state {
   background-color: #303030;
   opacity: 12%;
 }
 
 :not(:disabled):hover .gsi-material-button {
-  -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
-  box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  -webkit-box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
+  box-shadow:
+    0 1px 2px 0 rgba(60, 64, 67, 0.3),
+    0 1px 3px 1px rgba(60, 64, 67, 0.15);
 }
 
 :not(:disabled):hover .gsi-material-button-state {
