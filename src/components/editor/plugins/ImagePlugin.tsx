@@ -16,15 +16,28 @@ import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext
 import {
   $getSelection,
   $isRangeSelection,
+  $isNodeSelection,
   $insertNodes,
+  $createParagraphNode,
+  $isElementNode,
   COMMAND_PRIORITY_EDITOR,
   COMMAND_PRIORITY_LOW,
+  COMMAND_PRIORITY_HIGH,
   createCommand,
   type LexicalCommand,
   DROP_COMMAND,
   PASTE_COMMAND,
+  KEY_BACKSPACE_COMMAND,
+  KEY_DELETE_COMMAND,
+  FORMAT_ELEMENT_COMMAND,
+  type LexicalNode,
 } from "lexical";
-import { $createImageNode, ImageNode } from "../nodes/ImageNode";
+import {
+  $createImageNode,
+  $isImageNode,
+  ImageNode,
+  type ImageAlignment,
+} from "../nodes/ImageNode";
 
 export type InsertImagePayload = {
   src: string;
@@ -55,6 +68,30 @@ async function uploadFile(
 
 function isImageFile(file: File): boolean {
   return file.type.startsWith("image/");
+}
+
+/**
+ * Removes an image node and places cursor on the nearest neighbor.
+ */
+function removeImageNode(imageNode: LexicalNode) {
+  if (!$isImageNode(imageNode)) return;
+  const prev = imageNode.getPreviousSibling();
+  const next = imageNode.getNextSibling();
+  if (prev) {
+    imageNode.remove();
+    if ($isElementNode(prev)) {
+      prev.selectEnd();
+    }
+  } else if (next) {
+    imageNode.remove();
+    if ($isElementNode(next)) {
+      next.selectStart();
+    }
+  } else {
+    const p = $createParagraphNode();
+    imageNode.replace(p);
+    p.select();
+  }
 }
 
 export function ImagePlugin(): null {
@@ -96,7 +133,7 @@ export function ImagePlugin(): null {
         if (imageFiles.length === 0) return false;
 
         event.preventDefault();
-        handleFileUpload(imageFiles);
+        void handleFileUpload(imageFiles);
         return true;
       },
       COMMAND_PRIORITY_LOW,
@@ -113,16 +150,113 @@ export function ImagePlugin(): null {
         if (imageFiles.length === 0) return false;
 
         event.preventDefault();
-        handleFileUpload(imageFiles);
+        void handleFileUpload(imageFiles);
         return true;
       },
       COMMAND_PRIORITY_LOW,
+    );
+
+    // Cursor-adjacent deletion: Backspace at start of node removes previous ImageNode
+    const removeBackspaceCommand = editor.registerCommand(
+      KEY_BACKSPACE_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed())
+          return false;
+
+        const anchor = selection.anchor;
+        if (anchor.offset !== 0) return false;
+
+        // Get the top-level block containing the cursor
+        const anchorNode = anchor.getNode();
+        const topBlock = anchorNode.getTopLevelElement();
+        if (!topBlock) return false;
+
+        const prevSibling = topBlock.getPreviousSibling();
+        if ($isImageNode(prevSibling)) {
+          removeImageNode(prevSibling);
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+
+    // Cursor-adjacent deletion: Delete at end of node removes next ImageNode
+    const removeDeleteCommand = editor.registerCommand(
+      KEY_DELETE_COMMAND,
+      () => {
+        const selection = $getSelection();
+        if (!$isRangeSelection(selection) || !selection.isCollapsed())
+          return false;
+
+        const anchor = selection.anchor;
+        const anchorNode = anchor.getNode();
+        const topBlock = anchorNode.getTopLevelElement();
+        if (!topBlock) return false;
+
+        // Check if cursor is at the very end of the block
+        const textLength = anchorNode.getTextContentSize();
+        if (anchor.offset !== textLength) return false;
+
+        // Also verify no next sibling within the block (cursor is truly at block end)
+        const nextInBlock = anchorNode.getNextSibling();
+        if (nextInBlock) return false;
+
+        const nextSibling = topBlock.getNextSibling();
+        if ($isImageNode(nextSibling)) {
+          removeImageNode(nextSibling);
+          return true;
+        }
+        return false;
+      },
+      COMMAND_PRIORITY_LOW,
+    );
+
+    // Alignment: intercept FORMAT_ELEMENT_COMMAND when an image is selected
+    const ALIGNMENT_MAP: Record<string, ImageAlignment> = {
+      left: "left",
+      center: "center",
+      right: "right",
+      justify: "center", // justify maps to center for images
+    };
+
+    const removeFormatCommand = editor.registerCommand(
+      FORMAT_ELEMENT_COMMAND,
+      (formatType) => {
+        const selection = $getSelection();
+
+        if ($isNodeSelection(selection)) {
+          const nodes = selection.getNodes();
+          const imageNode = nodes.find((n) => $isImageNode(n));
+          if (imageNode && $isImageNode(imageNode)) {
+            const alignment = ALIGNMENT_MAP[formatType] ?? "center";
+
+            editor.update(() => {
+              const parent = imageNode.getParent();
+              if (parent && $isElementNode(parent)) {
+                // Paragraph and other element nodes support setFormat
+                // This drives text-align on the block, which HTML export preserves.
+                parent.setFormat(alignment);
+              }
+            });
+
+            return true;
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH,
     );
 
     return () => {
       removeInsertCommand();
       removeDropCommand();
       removePasteCommand();
+      removeBackspaceCommand();
+      removeDeleteCommand();
+      removeFormatCommand();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor]);

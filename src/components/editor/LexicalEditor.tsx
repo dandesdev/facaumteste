@@ -3,25 +3,11 @@
 /**
  * Lexical Rich Text Editor Component
  *
- * TEACHING NOTE:
- * This is the main editor component. Here's how it works:
- *
- * 1. LexicalComposer provides the editor context (like React.Context)
- * 2. RichTextPlugin adds the ContentEditable and handles rich text
- * 3. HistoryPlugin adds undo/redo support
- * 4. ListPlugin enables bullet and numbered lists
- * 5. LinkPlugin enables clickable links
- * 6. Our ToolbarPlugin adds the formatting buttons
- * 7. Our OnChangePlugin saves content when it changes
- *
- * The initialConfig sets up:
- * - namespace: unique ID for this editor instance
- * - theme: CSS class mappings (see theme.ts)
- * - nodes: which node types are allowed
- * - onError: error handler
- * - editorState: initial content (JSON or undefined)
+ * Core editor with toolbar, rich text, history, lists, links,
+ * equations (inline + block), images (with resize), and HTML toggle.
  */
 
+import { useState } from "react";
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -42,6 +28,7 @@ import { EquationPlugin } from "./plugins/EquationPlugin";
 import { EquationNode } from "./nodes/EquationNode";
 import { ImagePlugin } from "./plugins/ImagePlugin";
 import { ImageNode } from "./nodes/ImageNode";
+import { HtmlTogglePlugin } from "./plugins/HtmlTogglePlugin";
 
 interface LexicalEditorProps {
   /** Initial content as serialized JSON */
@@ -54,6 +41,8 @@ interface LexicalEditorProps {
   editable?: boolean;
   /** Optional CSS class for the container */
   className?: string;
+  /** Optional item ID for image picker context (future) */
+  itemId?: string;
 }
 
 export function LexicalEditor({
@@ -63,10 +52,11 @@ export function LexicalEditor({
   editable = true,
   className = "",
 }: LexicalEditorProps) {
+  const [isHtmlMode, setIsHtmlMode] = useState(false);
+
   // Handle editor state changes
   const handleChange = (editorState: EditorState) => {
     if (onChange) {
-      // Convert EditorState to JSON for storage
       const json = editorState.toJSON();
       onChange(json);
     }
@@ -82,7 +72,6 @@ export function LexicalEditor({
         return undefined;
       }
     }
-    // If it's already an object, stringify it for Lexical
     return JSON.stringify(initialContent);
   };
 
@@ -94,7 +83,6 @@ export function LexicalEditor({
     },
     editable,
     editorState: getInitialState(),
-    // Register node types we want to support
     nodes: [
       HeadingNode,
       QuoteNode,
@@ -111,23 +99,31 @@ export function LexicalEditor({
       className={`bg-background overflow-hidden rounded-md border ${className}`}
     >
       <LexicalComposer initialConfig={initialConfig}>
-        {/* Toolbar with formatting buttons */}
-        <ToolbarPlugin />
+        {/* Toolbar with formatting buttons + HTML toggle */}
+        <ToolbarPlugin
+          isHtmlMode={isHtmlMode}
+          onToggleHtml={() => setIsHtmlMode(!isHtmlMode)}
+        />
 
-        {/* Main editor area */}
-        <div className="relative">
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable className="lexical-content-editable" />
-            }
-            placeholder={
-              <div className="lexical-placeholder">{placeholder}</div>
-            }
-            ErrorBoundary={LexicalErrorBoundary}
-          />
-        </div>
+        {/* Visual editor — hidden when in HTML mode */}
+        {!isHtmlMode && (
+          <div className="relative">
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable className="lexical-content-editable" />
+              }
+              placeholder={
+                <div className="lexical-placeholder">{placeholder}</div>
+              }
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+          </div>
+        )}
 
-        {/* Plugins that add functionality */}
+        {/* HTML code view — shown when in HTML mode */}
+        <HtmlTogglePlugin isHtmlMode={isHtmlMode} onToggle={setIsHtmlMode} />
+
+        {/* Plugins */}
         <HistoryPlugin />
         <ListPlugin />
         <LinkPlugin />

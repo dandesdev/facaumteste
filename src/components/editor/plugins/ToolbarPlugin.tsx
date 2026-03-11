@@ -56,6 +56,7 @@ import {
   Sigma,
   Radical,
   ImagePlus,
+  Code,
 } from "lucide-react";
 import { INSERT_EQUATION_COMMAND } from "./EquationPlugin";
 import { openImageFilePicker } from "./ImagePlugin";
@@ -68,7 +69,15 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 
-export function ToolbarPlugin() {
+interface ToolbarPluginProps {
+  isHtmlMode?: boolean;
+  onToggleHtml?: () => void;
+}
+
+export function ToolbarPlugin({
+  isHtmlMode,
+  onToggleHtml,
+}: ToolbarPluginProps = {}) {
   const [editor] = useLexicalComposerContext();
 
   // Equation insertion
@@ -381,6 +390,24 @@ export function ToolbarPlugin() {
       >
         <ImagePlus className="h-4 w-4" />
       </Button>
+
+      {/* Spacer to push HTML toggle to the right */}
+      <div className="flex-1" />
+
+      {/* HTML Code Toggle */}
+      {onToggleHtml && (
+        <Button
+          type="button"
+          variant={isHtmlMode ? "secondary" : "ghost"}
+          size="sm"
+          onClick={onToggleHtml}
+          className="h-8 gap-1 px-2 text-xs"
+          title={isHtmlMode ? "Modo visual" : "Modo HTML"}
+        >
+          <Code className="h-3.5 w-3.5" />
+          {isHtmlMode ? "Visual" : "HTML"}
+        </Button>
+      )}
     </div>
   );
 }

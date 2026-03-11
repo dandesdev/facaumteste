@@ -4,11 +4,14 @@
  * Image Node for Lexical Editor
  *
  * A DecoratorNode that displays an image in the editor.
- * Stores: src (URL), altText, width, height.
- * Always renders as a block element (images get their own line).
+ * Stores: src, altText, width, height, alignment.
+ * Block-level node (images get their own line).
+ * Includes importDOM() so <img> tags survive HTML round-trips.
  */
 
 import type {
+  DOMConversionMap,
+  DOMConversionOutput,
   DOMExportOutput,
   EditorConfig,
   LexicalEditor,
@@ -21,21 +24,69 @@ import { DecoratorNode } from "lexical";
 import type React from "react";
 import { ImageComponent } from "./ImageComponent";
 
+export type ImageAlignment = "left" | "center" | "right";
+
 export type SerializedImageNode = Spread<
   {
     src: string;
     altText: string;
     width?: number;
     height?: number;
+    alignment?: ImageAlignment;
   },
   SerializedLexicalNode
 >;
+
+function convertImageElement(domNode: HTMLElement): DOMConversionOutput | null {
+  const img = domNode as HTMLImageElement;
+  const src = img.getAttribute("src");
+  if (!src) return null;
+
+  const altText = img.getAttribute("alt") ?? "";
+  const width = img.getAttribute("width");
+  const height = img.getAttribute("height");
+
+  const node = $createImageNode({
+    src,
+    altText,
+    width: width ? Number(width) : undefined,
+    height: height ? Number(height) : undefined,
+  });
+
+  return { node };
+}
+
+function convertImageWrapperElement(
+  domNode: HTMLElement,
+): DOMConversionOutput | null {
+  if (!domNode.classList.contains("editor-image-wrapper")) return null;
+
+  const img = domNode.querySelector("img");
+  if (!img) return null;
+
+  const src = img.getAttribute("src");
+  if (!src) return null;
+
+  const altText = img.getAttribute("alt") ?? "";
+  const width = img.getAttribute("width");
+  const height = img.getAttribute("height");
+
+  const node = $createImageNode({
+    src,
+    altText,
+    width: width ? Number(width) : undefined,
+    height: height ? Number(height) : undefined,
+  });
+
+  return { node };
+}
 
 export class ImageNode extends DecoratorNode<React.JSX.Element> {
   __src: string;
   __altText: string;
   __width: number | undefined;
   __height: number | undefined;
+  __alignment: ImageAlignment;
 
   static getType(): string {
     return "image";
@@ -47,6 +98,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
       node.__altText,
       node.__width,
       node.__height,
+      node.__alignment,
       node.__key,
     );
   }
@@ -56,6 +108,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
     altText: string,
     width?: number,
     height?: number,
+    alignment: ImageAlignment = "center",
     key?: NodeKey,
   ) {
     super(key);
@@ -63,6 +116,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
     this.__altText = altText;
     this.__width = width;
     this.__height = height;
+    this.__alignment = alignment;
   }
 
   // --- Serialization ---
@@ -73,6 +127,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
       altText: serializedNode.altText,
       width: serializedNode.width,
       height: serializedNode.height,
+      alignment: serializedNode.alignment,
     });
   }
 
@@ -82,30 +137,64 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
       altText: this.__altText,
       width: this.__width,
       height: this.__height,
+      alignment: this.__alignment,
       type: "image",
       version: 1,
     };
   }
 
-  // --- DOM ---
+  // --- DOM import/export ---
 
-  createDOM(_config: EditorConfig): HTMLElement {
-    const div = document.createElement("div");
-    div.className = "editor-image-wrapper";
-    return div;
+  static importDOM(): DOMConversionMap | null {
+    return {
+      img: () => ({
+        conversion: convertImageElement,
+        priority: 0,
+      }),
+      div: (domNode: HTMLElement) => {
+        if (!domNode.classList.contains("editor-image-wrapper")) {
+          return null;
+        }
+        return {
+          conversion: convertImageWrapperElement,
+          priority: 1,
+        };
+      },
+      span: (domNode: HTMLElement) => {
+        if (!domNode.classList.contains("editor-image-wrapper")) {
+          return null;
+        }
+        return {
+          conversion: convertImageWrapperElement,
+          priority: 1,
+        };
+      },
+    };
   }
 
-  updateDOM(): boolean {
+  createDOM(_config: EditorConfig): HTMLElement {
+    const span = document.createElement("span");
+    span.className = "editor-image-wrapper";
+    return span;
+  }
+
+  updateDOM(prevNode: ImageNode, dom: HTMLElement): boolean {
     return false;
   }
 
   exportDOM(): DOMExportOutput {
+    const wrapper = document.createElement("span");
+    wrapper.className = "editor-image-wrapper";
+
     const img = document.createElement("img");
     img.setAttribute("src", this.__src);
     img.setAttribute("alt", this.__altText);
     if (this.__width) img.setAttribute("width", String(this.__width));
     if (this.__height) img.setAttribute("height", String(this.__height));
-    return { element: img };
+
+    wrapper.appendChild(img);
+
+    return { element: wrapper };
   }
 
   // --- Getters & setters ---
@@ -118,6 +207,15 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
     return this.__altText;
   }
 
+  getAlignment(): ImageAlignment {
+    return this.__alignment;
+  }
+
+  setAlignment(alignment: ImageAlignment): void {
+    const writable = this.getWritable();
+    writable.__alignment = alignment;
+  }
+
   setWidthAndHeight(width?: number, height?: number): void {
     const writable = this.getWritable();
     writable.__width = width;
@@ -126,7 +224,7 @@ export class ImageNode extends DecoratorNode<React.JSX.Element> {
 
   // Block-level node
   isInline(): boolean {
-    return false;
+    return true;
   }
 
   // --- Decorator ---
@@ -151,13 +249,15 @@ export function $createImageNode({
   altText,
   width,
   height,
+  alignment,
 }: {
   src: string;
   altText: string;
   width?: number;
   height?: number;
+  alignment?: ImageAlignment;
 }): ImageNode {
-  return new ImageNode(src, altText, width, height);
+  return new ImageNode(src, altText, width, height, alignment ?? "center");
 }
 
 export function $isImageNode(
