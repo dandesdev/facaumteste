@@ -17,6 +17,8 @@ import {
 } from "~/components/ui/select";
 import { ITEM_TYPES, ITEM_TYPE_CONFIG, type ItemType } from "./item-utils";
 
+export type VisibilityFilter = "all" | "public" | "private";
+
 interface ItemsFiltersProps {
   search: string;
   onSearchChange: (value: string) => void;
@@ -24,6 +26,8 @@ interface ItemsFiltersProps {
   onTypeChange: (value: ItemType | "all") => void;
   status: "all" | "draft" | "published" | "archived";
   onStatusChange: (value: "all" | "draft" | "published" | "archived") => void;
+  visibility: VisibilityFilter;
+  onVisibilityChange: (value: VisibilityFilter) => void;
   showDeleted: boolean;
   onShowDeletedChange: (value: boolean) => void;
 }
@@ -35,6 +39,8 @@ export function ItemsFilters({
   onTypeChange,
   status,
   onStatusChange,
+  visibility,
+  onVisibilityChange,
   showDeleted,
   onShowDeletedChange,
 }: ItemsFiltersProps) {
@@ -80,6 +86,21 @@ export function ItemsFilters({
           <SelectItem value="draft">Rascunho</SelectItem>
           <SelectItem value="published">Publicado</SelectItem>
           <SelectItem value="archived">Arquivado</SelectItem>
+        </SelectContent>
+      </Select>
+
+      {/* Visibility filter */}
+      <Select
+        value={visibility}
+        onValueChange={(v) => onVisibilityChange(v as VisibilityFilter)}
+      >
+        <SelectTrigger className="w-[140px]">
+          <SelectValue placeholder="Visibilidade" />
+        </SelectTrigger>
+        <SelectContent position="popper">
+          <SelectItem value="all">Todos</SelectItem>
+          <SelectItem value="public">Públicos</SelectItem>
+          <SelectItem value="private">Privados</SelectItem>
         </SelectContent>
       </Select>
 

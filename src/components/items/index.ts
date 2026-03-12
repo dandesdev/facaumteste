@@ -1,5 +1,5 @@
 export { ItemCard } from "./ItemCard";
-export { ItemsFilters } from "./ItemsFilters";
+export { ItemsFilters, type VisibilityFilter } from "./ItemsFilters";
 export { ItemsSkeleton } from "./ItemsSkeleton";
 export { ItemsTable } from "./ItemsTable";
 export { SelectionCheckbox } from "./SelectionCheckbox";

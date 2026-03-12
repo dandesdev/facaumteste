@@ -2,10 +2,12 @@
 
 /**
  * Items Table Component
- * shadcn DataTable for item bank with sorting and column visibility
+ * shadcn DataTable for item bank with sorting and column visibility.
+ * Row click navigates to edit; checkbox and preview button do not.
  */
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -27,7 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { ChevronDown, ArrowUpDown } from "lucide-react";
+import { ChevronDown, ArrowUpDown, Globe, Lock, Eye } from "lucide-react";
 import { SelectionCheckbox } from "./SelectionCheckbox";
 import { CopyableId } from "./CopyableId";
 import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG } from "./item-utils";
@@ -40,6 +42,7 @@ interface Item {
   statement: unknown;
   createdAt: Date;
   updatedAt: Date | null;
+  isPublic?: boolean | null;
   creator?: { name: string | null } | null;
 }
 
@@ -63,6 +66,8 @@ const DEFAULT_COLUMNS = {
   createdAt: false,
   creator: false,
   status: true,
+  visibility: true,
+  actions: true,
 };
 
 function extractTextFromStatement(statement: unknown): string {
@@ -92,6 +97,7 @@ export function ItemsTable({
   onSelectChange,
   onSelectAll,
 }: ItemsTableProps) {
+  const router = useRouter();
   const [columns, setColumns] = useState(DEFAULT_COLUMNS);
   const [sortField, setSortField] = useState<SortField>("updatedAt");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -194,6 +200,18 @@ export function ItemsTable({
             >
               Status
             </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={columns.visibility}
+              onCheckedChange={() => toggleColumn("visibility")}
+            >
+              Visibilidade
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={columns.actions}
+              onCheckedChange={() => toggleColumn("actions")}
+            >
+              Ações
+            </DropdownMenuCheckboxItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -244,6 +262,12 @@ export function ItemsTable({
                   </Button>
                 </TableHead>
               )}
+              {columns.visibility && (
+                <TableHead className="w-[100px]">Visibilidade</TableHead>
+              )}
+              {columns.actions && (
+                <TableHead className="w-[90px]">Ações</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -255,14 +279,18 @@ export function ItemsTable({
               const statementText = extractTextFromStatement(item.statement);
               const isSelected = selectedIds.includes(item.id);
               const order = getSelectionOrder(item.id);
+              const isPublic = item.isPublic ?? false;
 
               return (
                 <TooltipProvider key={item.id}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <TableRow className="cursor-pointer hover:bg-muted/50">
+                      <TableRow
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => router.push(`/dashboard/items/${item.id}`)}
+                      >
                         {columns.select && (
-                          <TableCell>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
                             <SelectionCheckbox
                               selected={isSelected}
                               order={order}
@@ -320,6 +348,35 @@ export function ItemsTable({
                             >
                               {statusConfig.label}
                             </span>
+                          </TableCell>
+                        )}
+                        {columns.visibility && (
+                          <TableCell className="text-muted-foreground">
+                            {isPublic ? (
+                              <Globe className="h-4 w-4" aria-label="Público" />
+                            ) : (
+                              <Lock className="h-4 w-4" aria-label="Privado" />
+                            )}
+                          </TableCell>
+                        )}
+                        {columns.actions && (
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                    onClick={() => router.push(`/dashboard/items/${item.id}/preview`)}
+                                    aria-label="Visualizar"
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Visualizar</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </TableCell>
                         )}
                       </TableRow>

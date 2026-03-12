@@ -43,6 +43,7 @@ import {
   ItemsTable,
   SelectionCheckbox,
   type ItemType,
+  type VisibilityFilter,
 } from "~/components/items";
 
 type ViewMode = "cards" | "table";
@@ -60,6 +61,7 @@ export default function ItemsPage() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState<ItemType | "all">("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("all");
   const [showDeleted, setShowDeleted] = useState(false); // Trash view toggle
 
   // Selection - array for ordering
@@ -75,7 +77,7 @@ export default function ItemsPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [search, typeFilter, statusFilter, pageSize, showDeleted]);
+  }, [search, typeFilter, statusFilter, visibilityFilter, pageSize, showDeleted]);
 
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -94,6 +96,7 @@ export default function ItemsPage() {
     organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
     type: typeFilter === "all" ? undefined : typeFilter,
     status: statusFilter === "all" ? undefined : statusFilter,
+    visibility: visibilityFilter === "all" ? undefined : visibilityFilter,
     showDeleted,
     search: debouncedSearch || undefined,
     limit: fetchLimit,
@@ -109,6 +112,7 @@ export default function ItemsPage() {
     organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
     type: typeFilter === "all" ? undefined : typeFilter,
     status: statusFilter === "all" ? undefined : statusFilter,
+    visibility: visibilityFilter === "all" ? undefined : visibilityFilter,
     showDeleted,
     search: debouncedSearch || undefined,
     limit: fetchLimit,
@@ -372,7 +376,7 @@ export default function ItemsPage() {
   }, [pageItems, isAllSelected, selectedIds, handleSelectAll, handleDeleteClick]);
 
   // Check if filters are active (to show different empty state message)
-  const hasActiveFilters = typeFilter !== "all" || statusFilter !== "all" || debouncedSearch.trim() !== "";
+  const hasActiveFilters = typeFilter !== "all" || statusFilter !== "all" || visibilityFilter !== "all" || debouncedSearch.trim() !== "";
 
   return (
     <div className="space-y-6">
@@ -401,6 +405,8 @@ export default function ItemsPage() {
           onTypeChange={setTypeFilter}
           status={statusFilter}
           onStatusChange={setStatusFilter}
+          visibility={visibilityFilter}
+          onVisibilityChange={setVisibilityFilter}
           showDeleted={showDeleted}
           onShowDeletedChange={setShowDeleted}
         />
@@ -523,6 +529,7 @@ export default function ItemsPage() {
                   setSearch("");
                   setTypeFilter("all");
                   setStatusFilter("all");
+                  setVisibilityFilter("all");
                 }}
               >
                 Limpar filtros

@@ -3,10 +3,12 @@
 /**
  * MCQ Single Editor
  * Editor for Multiple Choice Question with single correct answer
+ * When itemId is provided, loads existing item and saves via update; otherwise creates new item.
  */
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Plus, Trash2, ChevronUp, ChevronDown, Save, Send } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
@@ -50,7 +52,11 @@ function generateId() {
   return Math.random().toString(36).substring(2, 9);
 }
 
-export function MCQSingleEditor() {
+interface MCQSingleEditorProps {
+  itemId?: string;
+}
+
+export function MCQSingleEditor({ itemId }: MCQSingleEditorProps) {
   const router = useRouter();
   const [isSaving, setIsSaving] = useState(false);
   const [showBaseText, setShowBaseText] = useState(false);
@@ -72,6 +78,64 @@ export function MCQSingleEditor() {
 
   const [tagInput, setTagInput] = useState("");
   const [showTagSuggestions, setShowTagSuggestions] = useState(false);
+  const [hasInitializedFromItem, setHasInitializedFromItem] = useState(false);
+
+  // Load existing item when editing
+  const { data: existingItem, isLoading: isLoadingItem } = api.item.getById.useQuery(
+    { id: itemId! },
+    { enabled: !!itemId }
+  );
+
+  // Initialize form from loaded item (once)
+  useEffect(() => {
+    if (!itemId || !existingItem || hasInitializedFromItem) return;
+    const st = existingItem.structure as {
+      baseText?: SerializedEditorState | null;
+      statement?: SerializedEditorState | null;
+      resolution?: SerializedEditorState | null;
+      choices?: Array<{
+        id: string;
+        content: SerializedEditorState | null;
+        comment: SerializedEditorState | null;
+      }>;
+      correctIndex?: number;
+    } | null;
+
+    const statementFromStructure = st?.statement ?? null;
+    const resolutionFromStructure = st?.resolution ?? null;
+    const choices = st?.choices?.length
+      ? st.choices.map((c) => ({
+          id: c.id,
+          content: c.content ?? null,
+          comment: c.comment ?? null,
+        }))
+      : [
+          { id: generateId(), content: null, comment: null },
+          { id: generateId(), content: null, comment: null },
+        ];
+    setFormData({
+      baseText: st?.baseText ?? null,
+      statement:
+        (statementFromStructure as SerializedEditorState | null) ??
+        ((existingItem.statement as SerializedEditorState | null) ?? null),
+      choices,
+      correctIndex: typeof st?.correctIndex === "number" ? st.correctIndex : 0,
+      resolution:
+        (resolutionFromStructure as SerializedEditorState | null) ??
+        ((existingItem.resolution as SerializedEditorState | null) ?? null),
+      difficulty: (existingItem.difficulty as "easy" | "medium" | "hard") ?? "medium",
+      tags: existingItem.tags ?? [],
+    });
+
+    if (st?.baseText) {
+      setShowBaseText(true);
+    }
+    if (resolutionFromStructure || existingItem.resolution) {
+      setShowResolution(true);
+    }
+
+    setHasInitializedFromItem(true);
+  }, [itemId, existingItem, hasInitializedFromItem]);
 
   // Fetch existing tags for autocomplete
   const { data: existingTags } = api.item.getTags.useQuery(
@@ -96,13 +160,25 @@ export function MCQSingleEditor() {
   const utils = api.useUtils();
   const createItem = api.item.create.useMutation({
     onSuccess: () => {
-      // Invalidate item list cache so new item appears
       void utils.item.list.invalidate();
       void utils.item.getCount.invalidate();
       router.push("/dashboard/items");
     },
     onError: (error) => {
-      alert(`Erro ao salvar: ${error.message}`);
+      toast.error("Erro ao salvar", { description: error.message });
+      setIsSaving(false);
+    },
+  });
+
+  const updateItem = api.item.update.useMutation({
+    onSuccess: () => {
+      void utils.item.list.invalidate();
+      void utils.item.getById.invalidate({ id: itemId! });
+      toast.success("Item atualizado");
+      setIsSaving(false);
+    },
+    onError: (error) => {
+      toast.error("Erro ao atualizar", { description: error.message });
       setIsSaving(false);
     },
   });
@@ -195,26 +271,23 @@ export function MCQSingleEditor() {
 
   const handleSave = useCallback(
     (status: "draft" | "published") => {
-      // Validate statement is present (TypeScript type narrowing)
       const statement = formData.statement;
       if (!statement) {
-        alert("O enunciado é obrigatório");
+        toast.error("O enunciado é obrigatório");
         return;
       }
 
       const filledChoices = formData.choices.filter((c) => c.content !== null);
       if (filledChoices.length < 2) {
-        alert("É necessário pelo menos 2 alternativas preenchidas");
+        toast.error("É necessário pelo menos 2 alternativas preenchidas");
         return;
       }
 
       setIsSaving(true);
 
-      const organizationId = activeSpace?.kind === "organization" ? activeSpace.id : undefined;
-
       const structure = {
         baseText: formData.baseText,
-        statement: statement,
+        statement: formData.statement,
         choices: formData.choices.map((c) => ({
           id: c.id,
           content: c.content,
@@ -224,19 +297,40 @@ export function MCQSingleEditor() {
         resolution: formData.resolution,
       };
 
-      createItem.mutate({
-        type: "mcq_single",
-        difficulty: formData.difficulty,
-        organizationId,
-        statement: statement,
-        structure,
-        resolution: formData.resolution,
-        tags: formData.tags,
-        status,
-      });
+      if (itemId) {
+        updateItem.mutate({
+          id: itemId,
+          statement,
+          structure,
+          resolution: formData.resolution,
+          difficulty: formData.difficulty,
+          tags: formData.tags,
+          status,
+        });
+      } else {
+        const organizationId = activeSpace?.kind === "organization" ? activeSpace.id : undefined;
+        createItem.mutate({
+          type: "mcq_single",
+          difficulty: formData.difficulty,
+          organizationId,
+          statement,
+          structure,
+          resolution: formData.resolution,
+          tags: formData.tags,
+          status,
+        });
+      }
     },
-    [formData, createItem, activeSpace]
+    [formData, createItem, updateItem, itemId, activeSpace]
   );
+
+  if (itemId && isLoadingItem) {
+    return (
+      <div className="space-y-6 max-w-4xl flex items-center justify-center min-h-[200px] text-muted-foreground">
+        Carregando item...
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -258,6 +352,7 @@ export function MCQSingleEditor() {
           <CollapsibleContent>
             <CardContent>
               <LexicalEditor
+                initialContent={formData.baseText ?? undefined}
                 placeholder="Digite o texto base aqui..."
                 onChange={updateBaseText}
               />
@@ -278,6 +373,12 @@ export function MCQSingleEditor() {
         </CardHeader>
         <CardContent>
           <LexicalEditor
+            key={
+              itemId
+                ? `statement-${itemId}-${hasInitializedFromItem ? "loaded" : "loading"}`
+                : "statement-new"
+            }
+            initialContent={formData.statement ?? undefined}
             placeholder="Digite o enunciado da questão..."
             onChange={updateStatement}
           />
@@ -362,6 +463,7 @@ export function MCQSingleEditor() {
                   </div>
                   <LexicalEditor
                     key={choice.id}
+                    initialContent={choice.content ?? undefined}
                     placeholder={`Digite a alternativa ${String.fromCharCode(65 + index)}...`}
                     onChange={(json) => updateChoiceContent(choice.id, json)}
                   />
@@ -390,6 +492,7 @@ export function MCQSingleEditor() {
           <CollapsibleContent>
             <CardContent>
               <LexicalEditor
+                initialContent={formData.resolution ?? undefined}
                 placeholder="Explique por que a alternativa marcada é a correta..."
                 onChange={updateResolution}
               />

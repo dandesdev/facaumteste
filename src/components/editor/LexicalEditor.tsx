@@ -99,14 +99,19 @@ export function LexicalEditor({
       className={`bg-background overflow-hidden rounded-md border ${className}`}
     >
       <LexicalComposer initialConfig={initialConfig}>
-        {/* Toolbar with formatting buttons + HTML toggle */}
-        <ToolbarPlugin
-          isHtmlMode={isHtmlMode}
-          onToggleHtml={() => setIsHtmlMode(!isHtmlMode)}
-        />
+        {/* Toolbar only when editable */}
+        {editable && (
+          <>
+            <ToolbarPlugin
+              isHtmlMode={isHtmlMode}
+              onToggleHtml={() => setIsHtmlMode(!isHtmlMode)}
+            />
+            <HtmlTogglePlugin isHtmlMode={isHtmlMode} onToggle={setIsHtmlMode} />
+          </>
+        )}
 
-        {/* Visual editor — hidden when in HTML mode */}
-        {!isHtmlMode && (
+        {/* Visual editor — hidden when in HTML mode (editable only) */}
+        {(!isHtmlMode || !editable) && (
           <div className="relative">
             <RichTextPlugin
               contentEditable={
@@ -120,16 +125,13 @@ export function LexicalEditor({
           </div>
         )}
 
-        {/* HTML code view — shown when in HTML mode */}
-        <HtmlTogglePlugin isHtmlMode={isHtmlMode} onToggle={setIsHtmlMode} />
-
         {/* Plugins */}
         <HistoryPlugin />
         <ListPlugin />
         <LinkPlugin />
         <EquationPlugin />
         <ImagePlugin />
-        <OnChangePlugin onChange={handleChange} />
+        {editable && <OnChangePlugin onChange={handleChange} />}
       </LexicalComposer>
     </div>
   );

@@ -34,6 +34,7 @@ export const itemRouter = createTRPCRouter({
                     ])
                     .optional(),
                 status: z.enum(["draft", "published", "archived"]).optional(),
+                visibility: z.enum(["public", "private"]).optional(), // Filter by isPublic; when omitted, show all
                 showDeleted: z.boolean().optional().default(false), // Show only deleted items (trash view)
                 search: z.string().optional(),
                 limit: z.number().min(1).max(100).default(10),
@@ -81,6 +82,13 @@ export const itemRouter = createTRPCRouter({
             // Status filter
             if (input.status) {
                 conditions.push(eq(items.status, input.status));
+            }
+
+            // Visibility filter (isPublic)
+            if (input.visibility === "public") {
+                conditions.push(eq(items.isPublic, true));
+            } else if (input.visibility === "private") {
+                conditions.push(eq(items.isPublic, false));
             }
 
             // Deleted filter - use deletedAt field
@@ -348,6 +356,7 @@ export const itemRouter = createTRPCRouter({
                 difficulty: z.enum(["easy", "medium", "hard"]).optional(),
                 tags: z.array(z.string()).optional(),
                 status: z.enum(["draft", "published", "archived"]).optional(),
+                isPublic: z.boolean().optional(),
             })
         )
         .mutation(async ({ ctx, input }) => {
@@ -388,12 +397,13 @@ export const itemRouter = createTRPCRouter({
             const [updated] = await ctx.db
                 .update(items)
                 .set({
-                    statement: input.statement,
-                    structure: input.structure,
-                    resolution: input.resolution,
-                    difficulty: input.difficulty,
-                    tags: input.tags,
-                    status: input.status,
+                    ...(input.statement !== undefined && { statement: input.statement }),
+                    ...(input.structure !== undefined && { structure: input.structure }),
+                    ...(input.resolution !== undefined && { resolution: input.resolution }),
+                    ...(input.difficulty !== undefined && { difficulty: input.difficulty }),
+                    ...(input.tags !== undefined && { tags: input.tags }),
+                    ...(input.status !== undefined && { status: input.status }),
+                    ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
                     updatedAt: new Date(),
                 })
                 .where(eq(items.id, input.id))
