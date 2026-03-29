@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createSupabaseServerClient } from "~/server/supabaseServer";
@@ -9,6 +10,7 @@ import { SpaceSwitcher } from "~/components/SpaceSwitcher";
 import { SpaceProvider } from "~/contexts/SpaceContext";
 import { SidebarNav } from "~/components/nav";
 import { ItemBankFiltersProvider } from "~/contexts/ItemBankFiltersContext";
+import { ItemBankFiltersUrlSync } from "~/contexts/ItemBankFiltersUrlSync";
 import { ItemsBankSidebarSection } from "~/components/items/ItemsBankSidebarSection";
 import { SpaceThemeProvider } from "~/components/theme/SpaceThemeProvider";
 import { ThemeToggle } from "~/components/theme/ThemeToggle";
@@ -120,6 +122,9 @@ export default async function DashboardLayout({
     <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName, theme: spaceTheme }}>
       <SpaceThemeProvider>
         <ItemBankFiltersProvider>
+        <Suspense fallback={null}>
+          <ItemBankFiltersUrlSync />
+        </Suspense>
         <SidebarProvider resizable={true}>
         <Sidebar collapsible="icon">
           <SidebarHeader>

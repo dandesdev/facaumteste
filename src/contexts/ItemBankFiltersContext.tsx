@@ -17,6 +17,8 @@ export type ItemBankStatusOption = "draft" | "published" | "archived";
 type ItemBankFiltersContextValue = {
   search: string;
   setSearch: (v: string) => void;
+  /** Apply search from URL/navigation without waiting for debounce (keeps list query in sync). */
+  syncSearchFromUrl: (v: string) => void;
   debouncedSearch: string;
   selectedTypes: ItemType[];
   setSelectedTypes: (v: ItemType[]) => void;
@@ -44,6 +46,11 @@ export function ItemBankFiltersProvider({ children }: { children: ReactNode }) {
     return () => clearTimeout(t);
   }, [search]);
 
+  const syncSearchFromUrl = useCallback((v: string) => {
+    setSearch(v);
+    setDebouncedSearch(v);
+  }, []);
+
   const clearAllFilters = useCallback(() => {
     setSearch("");
     setSelectedTypes([]);
@@ -55,6 +62,7 @@ export function ItemBankFiltersProvider({ children }: { children: ReactNode }) {
     () => ({
       search,
       setSearch,
+      syncSearchFromUrl,
       debouncedSearch,
       selectedTypes,
       setSelectedTypes,
@@ -68,6 +76,7 @@ export function ItemBankFiltersProvider({ children }: { children: ReactNode }) {
     }),
     [
       search,
+      syncSearchFromUrl,
       debouncedSearch,
       selectedTypes,
       selectedStatuses,
