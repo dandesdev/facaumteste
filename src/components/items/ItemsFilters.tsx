@@ -2,9 +2,11 @@
 
 /**
  * Items Filters Component
- * Search, type, status, visibility filters (multi-select checkboxes) and trash toggle for item bank
+ * — Tipo / Status: multi-select + master "Todos" (checked = no filter, indeterminate = subset; click = reset to all)
+ * — Visibilidade: radio group (mutually exclusive; "Todos" = no filter)
  */
 
+import { useId } from "react";
 import { Search, Trash2 } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -28,9 +30,10 @@ const STATUS_OPTIONS: { value: (typeof ITEM_STATUS_FILTER_VALUES)[number]; label
   { value: "archived", label: "Arquivado" },
 ];
 
-const VISIBILITY_OPTIONS = [
-  { value: "public" as const, label: "Públicos" },
-  { value: "private" as const, label: "Privados" },
+const VISIBILITY_RADIO_OPTIONS: { value: VisibilityFilter; label: string }[] = [
+  { value: "all", label: "Todos" },
+  { value: "public", label: "Públicos" },
+  { value: "private", label: "Privados" },
 ];
 
 export type ItemsFiltersVariant = "toolbar" | "sidebar";
@@ -64,12 +67,17 @@ export function ItemsFilters({
 }: ItemsFiltersProps) {
   const isSidebar = variant === "sidebar";
   const statusCount = ITEM_STATUS_FILTER_VALUES.length;
+  const visibilityGroupId = useId();
 
-  /** Empty array = implicit "all" (same API as full selection). */
-  const allTypesSelected =
+  const typesMasterChecked =
     selectedTypes.length === 0 || selectedTypes.length === ITEM_TYPES.length;
-  const allStatusesSelected =
+  const typesMasterIndeterminate =
+    selectedTypes.length > 0 && selectedTypes.length < ITEM_TYPES.length;
+
+  const statusesMasterChecked =
     selectedStatuses.length === 0 || selectedStatuses.length === statusCount;
+  const statusesMasterIndeterminate =
+    selectedStatuses.length > 0 && selectedStatuses.length < statusCount;
 
   const typeRowChecked = (t: ItemType) =>
     selectedTypes.length === 0 || selectedTypes.includes(t);
@@ -139,14 +147,10 @@ export function ItemsFilters({
       <div className={optionsClass}>
         <label className={optionLabelClass}>
           <Checkbox
-            checked={allTypesSelected}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                onSelectedTypesChange([]);
-              } else {
-                onSelectedTypesChange([ITEM_TYPES[0]]);
-              }
-            }}
+            checked={
+              typesMasterIndeterminate ? "indeterminate" : typesMasterChecked
+            }
+            onCheckedChange={() => onSelectedTypesChange([])}
           />
           <span>Todos</span>
         </label>
@@ -173,14 +177,12 @@ export function ItemsFilters({
       <div className={optionsClass}>
         <label className={optionLabelClass}>
           <Checkbox
-            checked={allStatusesSelected}
-            onCheckedChange={(checked) => {
-              if (checked) {
-                onSelectedStatusesChange([]);
-              } else {
-                onSelectedStatusesChange([ITEM_STATUS_FILTER_VALUES[0]]);
-              }
-            }}
+            checked={
+              statusesMasterIndeterminate
+                ? "indeterminate"
+                : statusesMasterChecked
+            }
+            onCheckedChange={() => onSelectedStatusesChange([])}
             disabled={showDeleted}
           />
           <span>Todos</span>
@@ -200,33 +202,29 @@ export function ItemsFilters({
   );
 
   const visibilityBlock = (
-    <div className={sectionClass}>
+    <div className={sectionClass} role="group" aria-labelledby={`${visibilityGroupId}-label`}>
       {isSidebar ? (
-        <SidebarGroupLabel className="px-0">Visibilidade</SidebarGroupLabel>
+        <SidebarGroupLabel className="px-0" id={`${visibilityGroupId}-label`}>
+          Visibilidade
+        </SidebarGroupLabel>
       ) : (
-        <Label className="text-xs text-muted-foreground">Visibilidade</Label>
+        <Label className="text-xs text-muted-foreground" id={`${visibilityGroupId}-label`}>
+          Visibilidade
+        </Label>
       )}
-      <div className={optionsClass}>
-        {VISIBILITY_OPTIONS.map((o) => (
+      <div className={optionsClass} role="radiogroup" aria-label="Filtrar por visibilidade">
+        {VISIBILITY_RADIO_OPTIONS.map((o) => (
           <label key={o.value} className={optionLabelClass}>
-            <Checkbox
+            <input
+              type="radio"
+              name={`item-bank-visibility-${visibilityGroupId}`}
+              className="size-4 shrink-0 cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50"
               checked={visibility === o.value}
-              onCheckedChange={(checked) => {
-                if (checked) onVisibilityChange(o.value);
-              }}
+              onChange={() => onVisibilityChange(o.value)}
             />
             <span>{o.label}</span>
           </label>
         ))}
-        <label className={optionLabelClass}>
-          <Checkbox
-            checked={visibility === "all"}
-            onCheckedChange={(checked) => {
-              if (checked) onVisibilityChange("all");
-            }}
-          />
-          <span>Todos</span>
-        </label>
       </div>
     </div>
   );
