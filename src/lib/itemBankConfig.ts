@@ -38,6 +38,12 @@ export const ITEM_BANK_CONFIG = {
   CACHE_TIME_MS: 5 * 60_000, // 5 minutes
 
   /**
+   * item.list queries: keep longer so filter changes can reuse cached rows
+   * for instant placeholder data before the server responds.
+   */
+  LIST_QUERY_GC_TIME_MS: 20 * 60_000, // 20 minutes
+
+  /**
    * Time in ms to cache the item count (for scale detection).
    * Count only needs to be roughly accurate, so cache longer.
    */

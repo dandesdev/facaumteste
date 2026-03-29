@@ -6,6 +6,7 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { Plus, LayoutGrid, Table2, Trash2, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
@@ -36,33 +37,38 @@ import {
 import { Input } from "~/components/ui/input";
 import { api } from "~/trpc/react";
 import { useSpace } from "~/contexts/SpaceContext";
+import { useItemBankFilters } from "~/contexts/ItemBankFiltersContext";
+import { buildItemListPlaceholderFromCache } from "~/lib/item-list-placeholder";
+import { ITEM_BANK_CONFIG } from "~/lib/itemBankConfig";
 import {
   ItemCard,
-  ItemsFilters,
   ItemsSkeleton,
   ItemsTable,
   SelectionCheckbox,
-  type ItemType,
-  type VisibilityFilter,
+  ITEM_TYPES,
+  ITEM_STATUS_FILTER_VALUES,
 } from "~/components/items";
 
 type ViewMode = "cards" | "table";
-type StatusFilter = "all" | "draft" | "published" | "archived";
 
 const PAGE_SIZES = [5, 10, 20] as const;
 
 export default function ItemsPage() {
+  const queryClient = useQueryClient();
+  const {
+    search,
+    debouncedSearch,
+    selectedTypes,
+    selectedStatuses,
+    visibilityFilter,
+    showDeleted,
+    clearAllFilters,
+  } = useItemBankFilters();
+
   // View preferences
   const [view, setView] = useState<ViewMode>("cards");
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState(0);
-
-  // Filters
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<ItemType | "all">("all");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const [visibilityFilter, setVisibilityFilter] = useState<VisibilityFilter>("all");
-  const [showDeleted, setShowDeleted] = useState(false); // Trash view toggle
 
   // Selection - array for ordering
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -77,47 +83,54 @@ export default function ItemsPage() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(0);
-  }, [search, typeFilter, statusFilter, visibilityFilter, pageSize, showDeleted]);
-
-  // Debounced search
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 300);
-    return () => clearTimeout(timer);
-  }, [search]);
+  }, [search, selectedTypes, selectedStatuses, visibilityFilter, pageSize, showDeleted]);
 
   // Calculate offset for prefetching (2-3 pages ahead)
   const prefetchMultiplier = 3;
   const fetchLimit = pageSize * prefetchMultiplier;
   const fetchOffset = Math.floor(currentPage / prefetchMultiplier) * fetchLimit;
 
-  // Fetch items
-  const { data, isLoading, isFetching } = api.item.list.useQuery({
-    organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
-    type: typeFilter === "all" ? undefined : typeFilter,
-    status: statusFilter === "all" ? undefined : statusFilter,
-    visibility: visibilityFilter === "all" ? undefined : visibilityFilter,
-    showDeleted,
-    search: debouncedSearch || undefined,
-    limit: fetchLimit,
-    offset: fetchOffset,
-  });
+  const queryInput = useMemo(
+    () => ({
+      organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
+      types:
+        selectedTypes.length > 0 && selectedTypes.length < ITEM_TYPES.length
+          ? selectedTypes
+          : undefined,
+      statuses:
+        selectedStatuses.length > 0 &&
+        selectedStatuses.length < ITEM_STATUS_FILTER_VALUES.length
+          ? selectedStatuses
+          : undefined,
+      visibility: visibilityFilter === "all" ? undefined : visibilityFilter,
+      showDeleted,
+      search: debouncedSearch || undefined,
+      limit: fetchLimit,
+      offset: fetchOffset,
+    }),
+    [
+      activeSpace.kind,
+      activeSpace.id,
+      selectedTypes,
+      selectedStatuses,
+      visibilityFilter,
+      showDeleted,
+      debouncedSearch,
+      fetchLimit,
+      fetchOffset,
+    ],
+  );
 
+  // Fetch items (placeholder merges matching rows from cached list queries + previous page)
+  const { data, isLoading, isFetching, isPlaceholderData } = api.item.list.useQuery(queryInput, {
+    staleTime: ITEM_BANK_CONFIG.STALE_TIME_MS,
+    gcTime: ITEM_BANK_CONFIG.LIST_QUERY_GC_TIME_MS,
+    placeholderData: (previousData) =>
+      buildItemListPlaceholderFromCache(queryClient, queryInput, previousData),
+  });
 
   // Mutations with optimistic updates - manipulate cache directly
   const utils = api.useUtils();
-
-  // Get current query key for cache manipulation
-  const queryInput = {
-    organizationId: activeSpace.kind === "organization" ? activeSpace.id : undefined,
-    type: typeFilter === "all" ? undefined : typeFilter,
-    status: statusFilter === "all" ? undefined : statusFilter,
-    visibility: visibilityFilter === "all" ? undefined : visibilityFilter,
-    showDeleted,
-    search: debouncedSearch || undefined,
-    limit: fetchLimit,
-    offset: fetchOffset,
-  };
 
   const deleteManyMutation = api.item.deleteMany.useMutation({
     onMutate: async ({ ids }) => {
@@ -376,7 +389,12 @@ export default function ItemsPage() {
   }, [pageItems, isAllSelected, selectedIds, handleSelectAll, handleDeleteClick]);
 
   // Check if filters are active (to show different empty state message)
-  const hasActiveFilters = typeFilter !== "all" || statusFilter !== "all" || visibilityFilter !== "all" || debouncedSearch.trim() !== "";
+  const hasActiveFilters =
+    (selectedTypes.length > 0 && selectedTypes.length < ITEM_TYPES.length) ||
+    (selectedStatuses.length > 0 &&
+      selectedStatuses.length < ITEM_STATUS_FILTER_VALUES.length) ||
+    visibilityFilter !== "all" ||
+    debouncedSearch.trim() !== "";
 
   return (
     <div className="space-y-6">
@@ -396,21 +414,8 @@ export default function ItemsPage() {
         </Button>
       </div>
 
-      {/* Filters and View Toggle */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <ItemsFilters
-          search={search}
-          onSearchChange={setSearch}
-          type={typeFilter}
-          onTypeChange={setTypeFilter}
-          status={statusFilter}
-          onStatusChange={setStatusFilter}
-          visibility={visibilityFilter}
-          onVisibilityChange={setVisibilityFilter}
-          showDeleted={showDeleted}
-          onShowDeletedChange={setShowDeleted}
-        />
-
+      {/* View / page size (filters live in sidebar on this route) */}
+      <div className="flex flex-wrap items-center justify-end gap-4">
         <div className="flex items-center gap-2">
           {/* View toggle */}
           <div className="flex border rounded-md">
@@ -474,7 +479,7 @@ export default function ItemsPage() {
           {selectedIds.length > 0
             ? `${selectedIds.length} ${selectedIds.length === 1 ? "item selecionado" : "itens selecionados"}`
             : "Selecione itens"}
-          {isFetching && (
+          {(isFetching || isPlaceholderData) && (
             <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
           )}
         </span>
@@ -523,15 +528,7 @@ export default function ItemsPage() {
               <p className="text-sm text-muted-foreground mb-4">
                 Tente ajustar os filtros ou limpar a busca
               </p>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearch("");
-                  setTypeFilter("all");
-                  setStatusFilter("all");
-                  setVisibilityFilter("all");
-                }}
-              >
+              <Button variant="outline" onClick={clearAllFilters}>
                 Limpar filtros
               </Button>
             </>
@@ -594,7 +591,7 @@ export default function ItemsPage() {
       )}
 
       {/* Loading indicator for background fetch */}
-      {isFetching && !isLoading && (
+      {isFetching && (isPlaceholderData || !isLoading) && (
         <div className="fixed bottom-4 right-4 bg-primary text-primary-foreground px-3 py-1.5 rounded-full text-sm">
           Atualizando...
         </div>

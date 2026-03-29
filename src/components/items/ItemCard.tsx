@@ -19,7 +19,7 @@ import {
 import { Globe, Lock, Eye } from "lucide-react";
 import { SelectionCheckbox } from "./SelectionCheckbox";
 import { CopyableId } from "./CopyableId";
-import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG } from "./item-utils";
+import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG, getStatementPreview } from "./item-utils";
 import type { ItemType } from "./item-utils";
 
 interface ItemCardProps {
@@ -38,33 +38,13 @@ interface ItemCardProps {
   onSelect?: (id: string, selected: boolean) => void;
 }
 
-function extractTextFromStatement(statement: unknown): string {
-  if (!statement) return "";
-  if (typeof statement === "string") return statement;
-  
-  try {
-    const json = statement as { root?: { children?: Array<{ children?: Array<{ text?: string }> }> } };
-    if (json.root?.children) {
-      return json.root.children
-        .flatMap((node) => node.children?.map((child) => child.text) ?? [])
-        .filter(Boolean)
-        .join(" ")
-        .slice(0, 200);
-    }
-  } catch {
-    // Fallback
-  }
-  
-  return JSON.stringify(statement).slice(0, 200);
-}
-
 export function ItemCard({ item, selected, selectionOrder, onSelect }: ItemCardProps) {
   const router = useRouter();
   const typeConfig = ITEM_TYPE_CONFIG[item.type as ItemType];
   const statusKey = item.status ?? "draft";
   const statusConfig = ITEM_STATUS_CONFIG[statusKey] ?? ITEM_STATUS_CONFIG["draft"]!;
   const TypeIcon = typeConfig?.icon;
-  const statementText = extractTextFromStatement(item.statement);
+  const statementText = getStatementPreview(item.statement, 200);
   const isPublic = item.isPublic ?? false;
 
   const formattedDate = item.updatedAt
@@ -119,8 +99,11 @@ export function ItemCard({ item, selected, selectionOrder, onSelect }: ItemCardP
         </p>
         <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
           <div className="flex items-center gap-1.5">
-            {TypeIcon && <TypeIcon className={`h-3.5 w-3.5 ${typeConfig.color}`} />}
-            <span>{typeConfig?.label}</span>
+            {TypeIcon && (
+              <span title={typeConfig?.label}>
+                <TypeIcon className={`h-3.5 w-3.5 ${typeConfig.color}`} />
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <span>{formattedDate}</span>

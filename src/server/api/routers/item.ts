@@ -6,7 +6,8 @@ import {
     items,
     organizationMembers,
 } from "~/server/db/schema";
-import { eq, and, desc, isNull, or, ilike, sql, count } from "drizzle-orm";
+import { eq, and, desc, isNull, or, sql, count, inArray } from "drizzle-orm";
+import { escapeSqlLikePattern } from "~/lib/sqlLike";
 import {
     RichContentSchema,
     OptionalRichContentSchema,
@@ -23,17 +24,19 @@ export const itemRouter = createTRPCRouter({
         .input(
             z.object({
                 organizationId: z.string().uuid().optional(),
-                type: z
-                    .enum([
-                        "mcq_single",
-                        "mcq_multiple",
-                        "true_false",
-                        "true_false_multi",
-                        "fill_blank",
-                        "matching",
-                    ])
+                types: z
+                    .array(
+                        z.enum([
+                            "mcq_single",
+                            "mcq_multiple",
+                            "true_false",
+                            "true_false_multi",
+                            "fill_blank",
+                            "matching",
+                        ])
+                    )
                     .optional(),
-                status: z.enum(["draft", "published", "archived"]).optional(),
+                statuses: z.array(z.enum(["draft", "published", "archived"])).optional(),
                 visibility: z.enum(["public", "private"]).optional(), // Filter by isPublic; when omitted, show all
                 showDeleted: z.boolean().optional().default(false), // Show only deleted items (trash view)
                 search: z.string().optional(),
@@ -74,14 +77,14 @@ export const itemRouter = createTRPCRouter({
                 );
             }
 
-            // Type filter
-            if (input.type) {
-                conditions.push(eq(items.type, input.type));
+            // Type filter (multi)
+            if (input.types?.length) {
+                conditions.push(inArray(items.type, input.types));
             }
 
-            // Status filter
-            if (input.status) {
-                conditions.push(eq(items.status, input.status));
+            // Status filter (multi)
+            if (input.statuses?.length) {
+                conditions.push(inArray(items.status, input.statuses));
             }
 
             // Visibility filter (isPublic)
@@ -100,13 +103,13 @@ export const itemRouter = createTRPCRouter({
                 conditions.push(isNull(items.deletedAt));
             }
 
-            // Search filter - search in ID or statement text
+            // Search filter - id is uuid: cast to text. Escape LIKE metacharacters in user input.
             if (input.search?.trim()) {
-                const searchTerm = `%${input.search.trim()}%`;
+                const pattern = `%${escapeSqlLikePattern(input.search.trim())}%`;
                 conditions.push(
                     or(
-                        ilike(items.id, searchTerm),
-                        sql`${items.statement}::text ILIKE ${searchTerm}`
+                        sql`${items.id}::text ILIKE ${pattern} ESCAPE '\\'`,
+                        sql`${items.statement}::text ILIKE ${pattern} ESCAPE '\\'`
                     )
                 );
             }

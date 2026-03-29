@@ -8,6 +8,8 @@ import LogoutButton from "~/components/LogoutButton";
 import { SpaceSwitcher } from "~/components/SpaceSwitcher";
 import { SpaceProvider } from "~/contexts/SpaceContext";
 import { SidebarNav } from "~/components/nav";
+import { ItemBankFiltersProvider } from "~/contexts/ItemBankFiltersContext";
+import { ItemsBankSidebarSection } from "~/components/items/ItemsBankSidebarSection";
 import { SpaceThemeProvider } from "~/components/theme/SpaceThemeProvider";
 import { ThemeToggle } from "~/components/theme/ThemeToggle";
 import {
@@ -117,6 +119,7 @@ export default async function DashboardLayout({
   return (
     <SpaceProvider activeSpace={{ kind: activeSpace.kind, id: activeSpace.id, name: spaceName, theme: spaceTheme }}>
       <SpaceThemeProvider>
+        <ItemBankFiltersProvider>
         <SidebarProvider resizable={true}>
         <Sidebar collapsible="icon">
           <SidebarHeader>
@@ -131,12 +134,13 @@ export default async function DashboardLayout({
             />
           </SidebarHeader>
 
-          <SidebarContent>
-            <SidebarGroup>
+          <SidebarContent className="min-h-0 flex-1 flex-col overflow-hidden">
+            <SidebarGroup className="shrink-0">
               <SidebarGroupContent>
                 <SidebarNav items={navigationItems} />
               </SidebarGroupContent>
             </SidebarGroup>
+            <ItemsBankSidebarSection />
           </SidebarContent>
 
           <SidebarFooter>
@@ -161,6 +165,7 @@ export default async function DashboardLayout({
           </div>
         </SidebarInset>
         </SidebarProvider>
+        </ItemBankFiltersProvider>
       </SpaceThemeProvider>
     </SpaceProvider>
   );

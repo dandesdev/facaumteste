@@ -32,7 +32,7 @@ import {
 import { ChevronDown, ArrowUpDown, Globe, Lock, Eye } from "lucide-react";
 import { SelectionCheckbox } from "./SelectionCheckbox";
 import { CopyableId } from "./CopyableId";
-import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG } from "./item-utils";
+import { ITEM_TYPE_CONFIG, ITEM_STATUS_CONFIG, getStatementPreview } from "./item-utils";
 import type { ItemType } from "./item-utils";
 
 interface Item {
@@ -59,36 +59,16 @@ type SortDir = "asc" | "desc";
 
 const DEFAULT_COLUMNS = {
   select: true,
-  itemId: true,
-  type: true,
-  statement: true,
+  itemId: false,
   updatedAt: true,
+  statement: true,
+  status: true,
+  actions: true,
+  type: false,
   createdAt: false,
   creator: false,
-  status: true,
-  visibility: true,
-  actions: true,
+  visibility: false,
 };
-
-function extractTextFromStatement(statement: unknown): string {
-  if (!statement) return "";
-  if (typeof statement === "string") return statement;
-  
-  try {
-    const json = statement as { root?: { children?: Array<{ children?: Array<{ text?: string }> }> } };
-    if (json.root?.children) {
-      return json.root.children
-        .flatMap((node) => node.children?.map((child) => child.text) ?? [])
-        .filter(Boolean)
-        .join(" ")
-        .slice(0, 100);
-    }
-  } catch {
-    // Fallback
-  }
-  
-  return "";
-}
 
 export function ItemsTable({
   items,
@@ -232,18 +212,28 @@ export function ItemsTable({
               {columns.itemId && (
                 <TableHead className="w-[100px]">ID</TableHead>
               )}
-              {columns.type && (
-                <TableHead className="w-[140px]">
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("type")}>
-                    Tipo <ArrowUpDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </TableHead>
-              )}
-              {columns.statement && <TableHead>Enunciado</TableHead>}
               {columns.updatedAt && (
                 <TableHead className="w-[120px]">
                   <Button variant="ghost" size="sm" onClick={() => handleSort("updatedAt")}>
                     Modificado <ArrowUpDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </TableHead>
+              )}
+              {columns.statement && <TableHead>Enunciado</TableHead>}
+              {columns.status && (
+                <TableHead className="w-[100px]">
+                  <Button variant="ghost" size="sm" onClick={() => handleSort("status")}>
+                    Status <ArrowUpDown className="ml-1 h-3 w-3" />
+                  </Button>
+                </TableHead>
+              )}
+              {columns.actions && (
+                <TableHead className="w-[90px]">Ações</TableHead>
+              )}
+              {columns.type && (
+                <TableHead className="w-[80px]">
+                  <Button variant="ghost" size="sm" onClick={() => handleSort("type")}>
+                    Tipo <ArrowUpDown className="ml-1 h-3 w-3" />
                   </Button>
                 </TableHead>
               )}
@@ -255,18 +245,8 @@ export function ItemsTable({
                 </TableHead>
               )}
               {columns.creator && <TableHead className="w-[140px]">Criador</TableHead>}
-              {columns.status && (
-                <TableHead className="w-[100px]">
-                  <Button variant="ghost" size="sm" onClick={() => handleSort("status")}>
-                    Status <ArrowUpDown className="ml-1 h-3 w-3" />
-                  </Button>
-                </TableHead>
-              )}
               {columns.visibility && (
                 <TableHead className="w-[100px]">Visibilidade</TableHead>
-              )}
-              {columns.actions && (
-                <TableHead className="w-[90px]">Ações</TableHead>
               )}
             </TableRow>
           </TableHeader>
@@ -276,7 +256,7 @@ export function ItemsTable({
               const statusKey = item.status ?? "draft";
               const statusConfig = ITEM_STATUS_CONFIG[statusKey] ?? ITEM_STATUS_CONFIG["draft"]!;
               const TypeIcon = typeConfig?.icon;
-              const statementText = extractTextFromStatement(item.statement);
+              const statementText = getStatementPreview(item.statement, 100);
               const isSelected = selectedIds.includes(item.id);
               const order = getSelectionOrder(item.id);
               const isPublic = item.isPublic ?? false;
@@ -303,21 +283,6 @@ export function ItemsTable({
                             <CopyableId id={item.id} />
                           </TableCell>
                         )}
-                        {columns.type && (
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {TypeIcon && <TypeIcon className={`h-4 w-4 ${typeConfig.color}`} />}
-                              <span className="text-sm">{typeConfig?.label}</span>
-                            </div>
-                          </TableCell>
-                        )}
-                        {columns.statement && (
-                          <TableCell className="max-w-[300px]">
-                            <span className="truncate block text-sm">
-                              {statementText || "Sem conteúdo"}
-                            </span>
-                          </TableCell>
-                        )}
                         {columns.updatedAt && (
                           <TableCell className="text-sm text-muted-foreground">
                             {item.updatedAt
@@ -325,14 +290,16 @@ export function ItemsTable({
                               : "-"}
                           </TableCell>
                         )}
-                        {columns.createdAt && (
-                          <TableCell className="text-sm text-muted-foreground">
-                            {new Date(item.createdAt).toLocaleDateString("pt-BR")}
-                          </TableCell>
-                        )}
-                        {columns.creator && (
-                          <TableCell className="text-sm">
-                            {item.creator?.name ?? "-"}
+                        {columns.statement && (
+                          <TableCell className="max-w-[300px]">
+                            <div className="flex items-center gap-1.5">
+                              {isPublic && (
+                                <Globe className="h-4 w-4 shrink-0 text-muted-foreground" aria-label="Público" />
+                              )}
+                              <span className="truncate block text-sm">
+                                {statementText || "Sem conteúdo"}
+                              </span>
+                            </div>
                           </TableCell>
                         )}
                         {columns.status && (
@@ -348,15 +315,6 @@ export function ItemsTable({
                             >
                               {statusConfig.label}
                             </span>
-                          </TableCell>
-                        )}
-                        {columns.visibility && (
-                          <TableCell className="text-muted-foreground">
-                            {isPublic ? (
-                              <Globe className="h-4 w-4" aria-label="Público" />
-                            ) : (
-                              <Lock className="h-4 w-4" aria-label="Privado" />
-                            )}
                           </TableCell>
                         )}
                         {columns.actions && (
@@ -377,6 +335,34 @@ export function ItemsTable({
                                 <TooltipContent>Visualizar</TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
+                          </TableCell>
+                        )}
+                        {columns.type && (
+                          <TableCell>
+                            {TypeIcon && (
+                              <span title={typeConfig?.label}>
+                                <TypeIcon className={`h-4 w-4 ${typeConfig.color}`} />
+                              </span>
+                            )}
+                          </TableCell>
+                        )}
+                        {columns.createdAt && (
+                          <TableCell className="text-sm text-muted-foreground">
+                            {new Date(item.createdAt).toLocaleDateString("pt-BR")}
+                          </TableCell>
+                        )}
+                        {columns.creator && (
+                          <TableCell className="text-sm">
+                            {item.creator?.name ?? "-"}
+                          </TableCell>
+                        )}
+                        {columns.visibility && (
+                          <TableCell className="text-muted-foreground">
+                            {isPublic ? (
+                              <Globe className="h-4 w-4" aria-label="Público" />
+                            ) : (
+                              <Lock className="h-4 w-4" aria-label="Privado" />
+                            )}
                           </TableCell>
                         )}
                       </TableRow>

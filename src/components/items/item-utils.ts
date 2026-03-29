@@ -2,7 +2,8 @@
 
 /**
  * Item Type Utilities
- * Maps item types to icons and labels
+ * Maps item types to icons and labels.
+ * Includes statement preview extraction from Lexical JSON (first words; images as alt or "<imagem>").
  */
 
 import {
@@ -71,3 +72,44 @@ export const ITEM_STATUS_CONFIG: Record<
   archived: { label: "Arquivado", variant: "outline" },
   deleted: { label: "Excluído", variant: "destructive" },
 };
+
+/** Lexical node shape (minimal for traversal) */
+type LexicalNodeLike = {
+  type?: string;
+  text?: string;
+  altText?: string;
+  children?: LexicalNodeLike[];
+};
+
+/**
+ * Extract a short preview from a Lexical statement JSON: first words of text,
+ * and for images use altText or the placeholder "<imagem>".
+ */
+export function getStatementPreview(statement: unknown, maxLength: number = 200): string {
+  if (!statement) return "";
+  if (typeof statement === "string") return statement.slice(0, maxLength);
+
+  const parts: string[] = [];
+
+  function walk(nodes: LexicalNodeLike[] | undefined): void {
+    if (!nodes) return;
+    for (const node of nodes) {
+      if (node.type === "text" && typeof node.text === "string") {
+        parts.push(node.text);
+      } else if (node.type === "image") {
+        const alt = typeof node.altText === "string" && node.altText.trim()
+          ? node.altText.trim()
+          : "<imagem>";
+        parts.push(alt);
+      } else if (Array.isArray(node.children)) {
+        walk(node.children);
+      }
+    }
+  }
+
+  const root = statement as { root?: { children?: LexicalNodeLike[] } };
+  walk(root.root?.children);
+
+  const joined = parts.join(" ").replace(/\s+/g, " ").trim();
+  return joined.slice(0, maxLength);
+}
